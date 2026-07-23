@@ -9,5 +9,4 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/birthday-rsvp-*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
-
+ENTRYPOINT ["java", "-Xms32m", "-Xmx112m", "-XX:MaxMetaspaceSize=72m", "-XX:ReservedCodeCacheSize=24m", "-Xss256k", "-jar", "app.jar"]
