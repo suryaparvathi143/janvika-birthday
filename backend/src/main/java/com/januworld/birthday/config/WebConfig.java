@@ -10,7 +10,11 @@ public class WebConfig implements WebMvcConfigurer {
     private final String[] allowedOrigins;
 
     public WebConfig(@Value("${app.allowed-origins}") String allowedOrigins) {
-        this.allowedOrigins = allowedOrigins.split(",");
+        this.allowedOrigins = (
+                allowedOrigins
+                        + ",https://januworld.com"
+                        + ",https://www.januworld.com"
+        ).split(",");
     }
 
     @Override
