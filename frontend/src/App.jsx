@@ -95,6 +95,7 @@ function InvitationApp() {
   const [form, setForm] = useState({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+  const whatsappShareText = encodeURIComponent(`You're warmly invited to our little angel ${party.childName}'s birthday celebration on July 26 at 12 PM! Please RSVP here: https://www.januworld.com`)
 
   useEffect(() => {
     document.body.style.overflow = showInvitation ? 'hidden' : ''
@@ -183,6 +184,7 @@ function InvitationApp() {
         <h1>{party.headline}<br /><span className="child-name">{party.childName}</span><br /><em>is turning {party.age}!</em></h1>
         <p className="intro">Cake, giggles, wishes—and all the people we love. Please join us to celebrate her special day.</p>
         <a className="primary-link" href="#rsvp">Say you’ll be there <span>↓</span></a>
+        <a className="whatsapp-share" href={`https://wa.me/?text=${whatsappShareText}`} target="_blank" rel="noreferrer">Share invitation on WhatsApp <span>↗</span></a>
       </div>
       <div className="cake" aria-label={`A birthday cake with ${party.age} candles`}>
         <div className="candles">{Array.from({ length: party.age }, (_, i) => <i key={i} />)}</div>

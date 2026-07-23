@@ -15,3 +15,13 @@ spring:
 
 app:
   allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+  whatsapp:
+    # Store these only as secret environment variables in Render.
+    # Sending stays disabled until every required setting is configured.
+    enabled: ${WHATSAPP_ENABLED:false}
+    access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    template-name: ${WHATSAPP_TEMPLATE_NAME:birthday_invitation}
+    template-language: ${WHATSAPP_TEMPLATE_LANGUAGE:en_US}
+    api-version: ${WHATSAPP_API_VERSION:v23.0}
+    admin-token: ${WHATSAPP_ADMIN_TOKEN:}

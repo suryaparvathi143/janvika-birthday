@@ -41,10 +41,28 @@ Backend:
 - `DATABASE_PASSWORD` (default `birthday`)
 - `ALLOWED_ORIGINS` (comma-separated; default local frontend)
 - `PORT` (default `8080`)
+- `WHATSAPP_ENABLED` (`true` only after setup; otherwise messages are disabled)
+- `WHATSAPP_ACCESS_TOKEN` (Meta permanent system-user access token; keep secret)
+- `WHATSAPP_PHONE_NUMBER_ID` (the Phone Number ID from Meta WhatsApp Manager)
+- `WHATSAPP_TEMPLATE_NAME` (default `birthday_invitation`)
+- `WHATSAPP_TEMPLATE_LANGUAGE` (default `en_US`)
+- `WHATSAPP_ADMIN_TOKEN` (a long, private token required to call the send endpoint)
 
 Frontend build:
 
 - `VITE_API_URL` (default `http://localhost:8080`)
+
+## WhatsApp Business invitations
+
+The website includes a free WhatsApp share link for manually sending the invitation.
+The API is also prepared for the official WhatsApp Business Cloud API, but is disabled
+by default so it cannot send messages accidentally.
+
+Before enabling it in Render, create and obtain approval for a Meta WhatsApp template
+named `birthday_invitation`. Put the full invitation and RSVP URL in that template.
+Then set the WhatsApp environment variables above and call `POST /api/whatsapp/invitations`
+with a private `X-Admin-Token` header and JSON such as `{ "phoneNumber": "+16145551234" }`.
+Only send to guests who have expressly agreed to receive WhatsApp messages.
 
 ## Production on Northflank
 
