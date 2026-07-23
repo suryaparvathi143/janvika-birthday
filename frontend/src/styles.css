@@ -114,6 +114,10 @@ fieldset { border: 0; padding: 0; margin: 0; }
 .response-top { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
 .response-top h3 { margin: 0; font-family: 'DM Serif Display'; font-size: 1.5rem; font-weight: 400; }
 .response-top time { color: #9c8793; font-size: .8rem; white-space: nowrap; }
+.response-actions { display: flex; align-items: center; gap: 12px; }
+.delete-response { border: 1px solid #e1b7bd; border-radius: 999px; padding: 5px 10px; background: #fff7f7; color: #a24455; font-size: .72rem; font-weight: 600; cursor: pointer; }
+.delete-response:hover { background: #fff0f1; }
+.delete-response:disabled { cursor: wait; opacity: .65; }
 .headcount { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
 .headcount span, .headcount strong { padding: 6px 10px; border-radius: 99px; background: #f8e9ea; color: #955064; font-size: .78rem; font-weight: 600; }
 .headcount strong { background: #e1efe9; color: #527e72; }

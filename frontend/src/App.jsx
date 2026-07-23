@@ -15,6 +15,7 @@ function RsvpDetails() {
   const [responses, setResponses] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     fetch(`${API_URL}/api/rsvps`)
@@ -26,6 +27,22 @@ function RsvpDetails() {
       .catch((error) => setLoadError(error.message))
       .finally(() => setLoading(false))
   }, [])
+
+  const deleteResponse = async (response) => {
+    if (!window.confirm(`Delete ${response.guestName}'s RSVP? This cannot be undone.`)) return
+
+    setDeletingId(response.id)
+    setLoadError('')
+    try {
+      const result = await fetch(`${API_URL}/api/rsvps/${response.id}`, { method: 'DELETE' })
+      if (!result.ok) throw new Error('Could not delete this response')
+      setResponses((current) => current.filter((item) => item.id !== response.id))
+    } catch (error) {
+      setLoadError(error.message)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const attending = responses.filter((response) => response.attending)
   const declined = responses.filter((response) => !response.attending)
@@ -53,7 +70,7 @@ function RsvpDetails() {
         <div className="response-list">
           {attending.length === 0 && <p className="empty-response">No accepting responses yet.</p>}
           {attending.map((response) => <article className="response-card" key={response.id}>
-            <div className="response-top"><h3>{response.guestName}</h3><time>{new Date(response.createdAt).toLocaleDateString()}</time></div>
+            <div className="response-top"><h3>{response.guestName}</h3><div className="response-actions"><time>{new Date(response.createdAt).toLocaleDateString()}</time><button className="delete-response" type="button" onClick={() => deleteResponse(response)} disabled={deletingId === response.id}>{deletingId === response.id ? 'Deleting…' : 'Delete'}</button></div></div>
             <p className="headcount"><span>{response.adults} {response.adults === 1 ? 'adult' : 'adults'}</span><span>{response.toddlers} {response.toddlers === 1 ? 'toddler' : 'toddlers'}</span><strong>{response.partySize} total</strong></p>
             {response.message && <p className="guest-message">“{response.message}”</p>}
           </article>)}
@@ -64,7 +81,7 @@ function RsvpDetails() {
         <div className="response-list">
           {declined.length === 0 && <p className="empty-response">No declined responses.</p>}
           {declined.map((response) => <article className="response-card" key={response.id}>
-            <div className="response-top"><h3>{response.guestName}</h3><time>{new Date(response.createdAt).toLocaleDateString()}</time></div>
+            <div className="response-top"><h3>{response.guestName}</h3><div className="response-actions"><time>{new Date(response.createdAt).toLocaleDateString()}</time><button className="delete-response" type="button" onClick={() => deleteResponse(response)} disabled={deletingId === response.id}>{deletingId === response.id ? 'Deleting…' : 'Delete'}</button></div></div>
             {response.message && <p className="guest-message">“{response.message}”</p>}
           </article>)}
         </div>

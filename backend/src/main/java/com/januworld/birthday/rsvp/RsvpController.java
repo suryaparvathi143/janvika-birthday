@@ -2,6 +2,7 @@ package com.januworld.birthday.rsvp;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -34,5 +35,14 @@ public class RsvpController {
         return repository.findAllByOrderByCreatedAtDesc().stream()
                 .map(RsvpResponse::from)
                 .toList();
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        if (!repository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "RSVP not found");
+        }
+        repository.deleteById(id);
     }
 }
