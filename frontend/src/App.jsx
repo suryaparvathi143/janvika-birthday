@@ -362,7 +362,7 @@ function InvitationApp() {
         <div className="invitation-stars" aria-hidden="true">✦　·　✧</div>
         <p className="invitation-kicker">You’re warmly invited</p>
         <h2 id="invitation-title">Come celebrate<br /><em>{party.childName}</em></h2>
-        <p className="invitation-copy">Our little angel is turning {party.age}, and her special day would be brighter with you there.</p>
+        <p className="invitation-copy">{party.parentInvitation} Our little angel is turning {party.age}, and her special day would be brighter with you there.</p>
         <div className="invitation-date">
           <div className="date-medallion" aria-hidden="true"><span>JUL</span><strong>26</strong></div>
           <div>
@@ -381,7 +381,7 @@ function InvitationApp() {
         <p className="eyebrow">A little celebration for a very big joy</p>
         <div className="hero-date-pill"><span>July 26</span><i />12:00 PM</div>
         <h1>{party.headline}<br /><span className="child-name">{party.childName}</span><br /><em>is turning {party.age}!</em></h1>
-        <p className="intro">Cake, giggles, wishes—and all the people we love. Please join us to celebrate her special day.</p>
+        <p className="intro">{party.parentInvitation} Cake, giggles, wishes—and all the people we love.</p>
         <a className="primary-link" href="#rsvp">Say you’ll be there <span>↓</span></a>
         <a className="whatsapp-share" href={`https://wa.me/?text=${whatsappShareText}`} target="_blank" rel="noreferrer">Share invitation on WhatsApp <span>↗</span></a>
       </div>
