@@ -16,6 +16,11 @@ function RsvpDetails() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [deletingId, setDeletingId] = useState(null)
+  const [adminToken, setAdminToken] = useState('')
+  const [invitationGuests, setInvitationGuests] = useState([])
+  const [invitationForm, setInvitationForm] = useState({ guestName: '', phoneNumber: '' })
+  const [invitationStatus, setInvitationStatus] = useState('')
+  const [invitationError, setInvitationError] = useState('')
 
   useEffect(() => {
     fetch(`${API_URL}/api/rsvps`)
@@ -44,6 +49,57 @@ function RsvpDetails() {
     }
   }
 
+  const invitationHeaders = { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken }
+
+  const loadInvitationGuests = async () => {
+    setInvitationError('')
+    try {
+      const response = await fetch(`${API_URL}/api/whatsapp/guests`, { headers: invitationHeaders })
+      if (!response.ok) throw new Error(response.status === 401 ? 'Enter the correct private invitation token.' : 'Could not load the invitation list.')
+      setInvitationGuests(await response.json())
+      setInvitationStatus('Invitation list unlocked.')
+    } catch (error) {
+      setInvitationError(error.message)
+    }
+  }
+
+  const addInvitationGuest = async (event) => {
+    event.preventDefault()
+    setInvitationError('')
+    setInvitationStatus('Adding guest…')
+    try {
+      const response = await fetch(`${API_URL}/api/whatsapp/guests`, {
+        method: 'POST', headers: invitationHeaders, body: JSON.stringify(invitationForm),
+      })
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Could not add this guest.')
+      const guest = await response.json()
+      setInvitationGuests((current) => [...current, guest])
+      setInvitationForm({ guestName: '', phoneNumber: '' })
+      setInvitationStatus(`${guest.guestName} is ready to receive an invitation.`)
+    } catch (error) {
+      setInvitationStatus('')
+      setInvitationError(error.message)
+    }
+  }
+
+  const sendPendingInvitations = async () => {
+    const pending = invitationGuests.filter((guest) => guest.invitationStatus === 'PENDING')
+    if (pending.length === 0) return
+    if (!window.confirm(`Send the WhatsApp invitation to ${pending.length} guest${pending.length === 1 ? '' : 's'} now?`)) return
+    setInvitationError('')
+    setInvitationStatus('Sending invitations…')
+    try {
+      const response = await fetch(`${API_URL}/api/whatsapp/invitations/send-pending`, { method: 'POST', headers: invitationHeaders })
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Could not send the invitations.')
+      const result = await response.json()
+      await loadInvitationGuests()
+      setInvitationStatus(`${result.accepted} accepted by WhatsApp${result.failed ? ` · ${result.failed} failed` : ''}.`)
+    } catch (error) {
+      setInvitationStatus('')
+      setInvitationError(error.message)
+    }
+  }
+
   const attending = responses.filter((response) => response.attending)
   const declined = responses.filter((response) => !response.attending)
   const totalGuests = attending.reduce((total, response) => total + response.partySize, 0)
@@ -64,6 +120,27 @@ function RsvpDetails() {
         <div><small>COMING</small><strong>{attending.length}</strong></div>
         <div><small>TOTAL GUESTS</small><strong>{totalGuests}</strong></div>
         <div><small>ADULTS / TODDLERS</small><strong>{adults} / {toddlers}</strong></div>
+      </section>
+      <section className="invitation-manager">
+        <div><p className="eyebrow">WhatsApp invitations</p><h2>Send your guest list</h2><p>Guests are sent only after you press send. “Accepted” means WhatsApp accepted the request, not that the guest has read it.</p></div>
+        <div className="invitation-panel">
+          <label>Private invitation token<input type="password" value={adminToken} onChange={(event) => setAdminToken(event.target.value)} placeholder="Enter your Render admin token" /></label>
+          <button type="button" className="token-button" disabled={!adminToken} onClick={loadInvitationGuests}>Open invitation list</button>
+          {adminToken && <form className="invitation-form" onSubmit={addInvitationGuest}>
+            <label>Guest name<input required maxLength="100" value={invitationForm.guestName} onChange={(event) => setInvitationForm({ ...invitationForm, guestName: event.target.value })} placeholder="Guest name" /></label>
+            <label>Mobile number<input required inputMode="tel" value={invitationForm.phoneNumber} onChange={(event) => setInvitationForm({ ...invitationForm, phoneNumber: event.target.value })} placeholder="+1 614 555 1234" /></label>
+            <button className="add-guest" type="submit">Add guest</button>
+          </form>}
+          {invitationStatus && <p className="invitation-state">{invitationStatus}</p>}
+          {invitationError && <p className="error" role="alert">{invitationError}</p>}
+          {adminToken && <>
+            <div className="invitation-actions"><strong>{invitationGuests.filter((guest) => guest.invitationStatus === 'PENDING').length} pending</strong><button type="button" className="send-invitations" disabled={!invitationGuests.some((guest) => guest.invitationStatus === 'PENDING')} onClick={sendPendingInvitations}>Send pending invitations</button></div>
+            <div className="invitation-list">
+              {invitationGuests.length === 0 && <p className="empty-response">Add guests to create your invitation list.</p>}
+              {invitationGuests.map((guest) => <div className="invitation-guest" key={guest.id}><div><strong>{guest.guestName}</strong><span>{guest.phoneNumber}</span></div><div><b className={`invitation-badge ${guest.invitationStatus.toLowerCase()}`}>{guest.invitationStatus.toLowerCase()}</b>{guest.lastError && <small>{guest.lastError}</small>}</div></div>)}
+            </div>
+          </>}
+        </div>
       </section>
       <section className="response-section">
         <div className="response-title"><h2>Joyfully attending</h2><span>{attending.length}</span></div>

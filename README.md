@@ -46,6 +46,7 @@ Backend:
 - `WHATSAPP_PHONE_NUMBER_ID` (the Phone Number ID from Meta WhatsApp Manager)
 - `WHATSAPP_TEMPLATE_NAME` (default `birthday_invitation`)
 - `WHATSAPP_TEMPLATE_LANGUAGE` (default `en_US`)
+- `WHATSAPP_TEMPLATE_INCLUDES_NAME` (default `true`; use a `{{1}}` guest-name variable in the template body)
 - `WHATSAPP_ADMIN_TOKEN` (a long, private token required to call the send endpoint)
 
 Frontend build:
@@ -60,8 +61,10 @@ by default so it cannot send messages accidentally.
 
 Before enabling it in Render, create and obtain approval for a Meta WhatsApp template
 named `birthday_invitation`. Put the full invitation and RSVP URL in that template.
-Then set the WhatsApp environment variables above and call `POST /api/whatsapp/invitations`
-with a private `X-Admin-Token` header and JSON such as `{ "phoneNumber": "+16145551234" }`.
+Then set the WhatsApp environment variables above. The private `/naveen` page lets you
+maintain the invitation list and send pending invitations. Each send is recorded as
+`ACCEPTED` (accepted by Meta) or `FAILED`; accepted does not guarantee that the guest has
+read the message. The guest name is sent as the `{{1}}` value in the approved template.
 Only send to guests who have expressly agreed to receive WhatsApp messages.
 
 ## Production on Northflank

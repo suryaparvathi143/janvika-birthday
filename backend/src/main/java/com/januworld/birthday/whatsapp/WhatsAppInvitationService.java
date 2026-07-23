@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
+import java.util.List;
 
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
@@ -22,12 +23,13 @@ public class WhatsAppInvitationService {
     @Value("${app.whatsapp.template-name:birthday_invitation}") private String templateName;
     @Value("${app.whatsapp.template-language:en_US}") private String templateLanguage;
     @Value("${app.whatsapp.api-version:v23.0}") private String apiVersion;
+    @Value("${app.whatsapp.template-includes-name:true}") private boolean templateIncludesName;
 
     public WhatsAppInvitationService(RestClient.Builder builder) {
         this.restClient = builder.build();
     }
 
-    public void sendInvitation(String rawPhoneNumber) {
+    public void sendInvitation(String rawPhoneNumber, String guestName) {
         if (!enabled || accessToken.isBlank() || phoneNumberId.isBlank()) {
             throw new ResponseStatusException(SERVICE_UNAVAILABLE, "WhatsApp invitations are not configured yet");
         }
@@ -35,9 +37,17 @@ public class WhatsAppInvitationService {
         if (phoneNumber.length() < 8 || phoneNumber.length() > 15) {
             throw new ResponseStatusException(BAD_GATEWAY, "The guest phone number is invalid");
         }
+        Map<String, Object> template = new java.util.HashMap<>(Map.of(
+                "name", templateName, "language", Map.of("code", templateLanguage)
+        ));
+        if (templateIncludesName) {
+            template.put("components", List.of(Map.of("type", "body", "parameters", List.of(
+                    Map.of("type", "text", "text", guestName)
+            ))));
+        }
         Map<String, Object> payload = Map.of(
                 "messaging_product", "whatsapp", "to", phoneNumber, "type", "template",
-                "template", Map.of("name", templateName, "language", Map.of("code", templateLanguage))
+                "template", template
         );
         try {
             restClient.post()
