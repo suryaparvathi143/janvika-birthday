@@ -11,6 +11,53 @@ function Detail({ icon, label, children }) {
   return <div className="detail"><span className="detail-icon" aria-hidden="true">{icon}</span><div><small>{label}</small><strong>{children}</strong></div></div>
 }
 
+function ConfirmPopup({ title, message, confirmLabel, tone, onConfirm, onCancel }) {
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [onCancel])
+
+  return <div className="confirm-overlay" role="presentation" onMouseDown={(event) => {
+    if (event.target === event.currentTarget) onCancel()
+  }}>
+    <div className="confirm-popup" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+      <span className={`confirm-icon ${tone}`} aria-hidden="true">{tone === 'danger' ? '!' : '✦'}</span>
+      <h3 id="confirm-title">{title}</h3>
+      <p id="confirm-message">{message}</p>
+      <div className="confirm-actions">
+        <button type="button" className="confirm-cancel" onClick={onCancel}>Cancel</button>
+        <button type="button" className={`confirm-accept ${tone}`} autoFocus onClick={onConfirm}>{confirmLabel}</button>
+      </div>
+    </div>
+  </div>
+}
+
+function useConfirmPopup() {
+  const [confirmation, setConfirmation] = useState(null)
+
+  const requestConfirmation = (options) => new Promise((resolve) => {
+    setConfirmation({ ...options, resolve })
+  })
+
+  const closeConfirmation = (result) => {
+    confirmation.resolve(result)
+    setConfirmation(null)
+  }
+
+  const confirmationPopup = confirmation
+    ? <ConfirmPopup
+        {...confirmation}
+        onConfirm={() => closeConfirmation(true)}
+        onCancel={() => closeConfirmation(false)}
+      />
+    : null
+
+  return { requestConfirmation, confirmationPopup }
+}
+
 function RsvpDetails() {
   const [responses, setResponses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +68,7 @@ function RsvpDetails() {
   const [invitationForm, setInvitationForm] = useState({ guestName: '', phoneNumber: '' })
   const [invitationStatus, setInvitationStatus] = useState('')
   const [invitationError, setInvitationError] = useState('')
+  const { requestConfirmation, confirmationPopup } = useConfirmPopup()
 
   useEffect(() => {
     fetch(`${API_URL}/api/rsvps`)
@@ -34,7 +82,13 @@ function RsvpDetails() {
   }, [])
 
   const deleteResponse = async (response) => {
-    if (!window.confirm(`Delete ${response.guestName}'s RSVP? This cannot be undone.`)) return
+    const confirmed = await requestConfirmation({
+      title: 'Delete this reply?',
+      message: `${response.guestName}'s RSVP will be permanently removed.`,
+      confirmLabel: 'Delete reply',
+      tone: 'danger',
+    })
+    if (!confirmed) return
 
     setDeletingId(response.id)
     setLoadError('')
@@ -85,7 +139,13 @@ function RsvpDetails() {
   const sendPendingInvitations = async () => {
     const pending = invitationGuests.filter((guest) => guest.invitationStatus === 'PENDING')
     if (pending.length === 0) return
-    if (!window.confirm(`Send the WhatsApp invitation to ${pending.length} guest${pending.length === 1 ? '' : 's'} now?`)) return
+    const confirmed = await requestConfirmation({
+      title: 'Send invitations?',
+      message: `The WhatsApp invitation will be sent to ${pending.length} pending guest${pending.length === 1 ? '' : 's'}.`,
+      confirmLabel: 'Send now',
+      tone: 'success',
+    })
+    if (!confirmed) return
     setInvitationError('')
     setInvitationStatus('Sending invitations…')
     try {
@@ -109,6 +169,7 @@ function RsvpDetails() {
   const nonVegetarianGuests = attending.reduce((total, response) => total + response.nonVegetarianCount, 0)
 
   return <main className="details-page">
+    {confirmationPopup}
     <header className="details-header">
       <p className="eyebrow">Janvika’s celebration</p>
       <h1>Guest responses</h1>
@@ -176,6 +237,7 @@ function InvitationApp() {
   const [form, setForm] = useState({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+  const { requestConfirmation, confirmationPopup } = useConfirmPopup()
   const whatsappShareText = encodeURIComponent(`You're warmly invited to our little angel ${party.childName}'s birthday celebration on July 26 at 12 PM! Please RSVP here: https://www.januworld.com`)
 
   useEffect(() => {
@@ -224,7 +286,12 @@ function InvitationApp() {
       const duplicate = await response.json()
       if (duplicate.code === 'POSSIBLE_DUPLICATE') {
         const names = duplicate.matches.join(', ')
-        const proceed = window.confirm(`An RSVP already exists for ${names}. Is this you or your family? Press OK only if you want to create a new entry.`)
+        const proceed = await requestConfirmation({
+          title: 'A similar reply exists',
+          message: `We found an RSVP for ${names}. Is this you or your family? Continue only if you need a new entry.`,
+          confirmLabel: 'Create new reply',
+          tone: 'notice',
+        })
         if (!proceed) return false
         return saveReply(true)
       }
@@ -255,6 +322,7 @@ function InvitationApp() {
   }
 
   return <main>
+    {confirmationPopup}
     {showInvitation && <div className="invitation-overlay" role="presentation">
       <div className="invitation-modal" role="dialog" aria-modal="true" aria-labelledby="invitation-title">
         <div className="invitation-border" aria-hidden="true" />

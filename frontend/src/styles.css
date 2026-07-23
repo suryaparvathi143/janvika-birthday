@@ -5,6 +5,18 @@
 html { scroll-behavior: smooth; }
 body { margin: 0; }
 button, input, select, textarea { font: inherit; }
+.confirm-overlay { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px; background: #2d202d70; backdrop-filter: blur(5px); animation: overlay-in .18s ease-out; }
+.confirm-popup { width: min(390px, 100%); padding: 30px; text-align: center; background: linear-gradient(145deg, #fffdf9, #fff7ef); border: 1px solid #ead6d2; border-radius: 18px; box-shadow: 0 25px 70px #25172445; animation: confirm-in .22s ease-out; }
+.confirm-icon { display: grid; place-items: center; width: 43px; height: 43px; margin: 0 auto 16px; border-radius: 50%; background: #f7e6c8; color: #b67925; font-size: 1.1rem; font-weight: 700; }
+.confirm-icon.danger { background: #f8dfe3; color: #ae4055; }.confirm-icon.success { background: #dceee6; color: #39765e; }
+.confirm-popup h3 { margin: 0; color: #4b394b; font-family: 'DM Serif Display'; font-size: 1.65rem; font-weight: 400; }
+.confirm-popup p { margin: 13px 0 24px; color: #72616e; font-size: .93rem; line-height: 1.6; }
+.confirm-actions { display: grid; grid-template-columns: 1fr 1.35fr; gap: 10px; }
+.confirm-actions button { padding: 12px 15px; border-radius: 999px; font-size: .86rem; font-weight: 700; cursor: pointer; }
+.confirm-cancel { border: 1px solid #ddced3; background: #fff; color: #6f5d69; }
+.confirm-accept { border: 0; background: #5c4560; color: #fff; }.confirm-accept.danger { background: #b64c60; }.confirm-accept.success { background: #417963; }
+.confirm-actions button:focus-visible { outline: 3px solid #e1a94f; outline-offset: 2px; }
+@keyframes confirm-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 .invitation-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 22px; overflow-y: auto; background: radial-gradient(circle at 25% 15%, #6f4c6799, transparent 36%), #2d202ddb; backdrop-filter: blur(11px); animation: overlay-in .35s ease-out; }
 .invitation-modal { width: min(560px, 100%); padding: clamp(38px, 6vw, 62px); position: relative; overflow: hidden; text-align: center; color: #4b394b; background: linear-gradient(145deg, #fffdf8, #fff6ee); border: 1px solid #edcfca; border-radius: 22px; box-shadow: 0 35px 100px #160d17b8, inset 0 0 0 7px #fffaf4; animation: invitation-in .45s ease-out; }
 .invitation-border { position: absolute; inset: 14px; border: 1px solid #deb472; border-radius: 14px; pointer-events: none; opacity: .72; }
