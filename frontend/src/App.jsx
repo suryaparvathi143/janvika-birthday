@@ -103,13 +103,31 @@ function InvitationApp() {
 
   const update = (event) => {
     const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: ['adults', 'toddlers', 'vegetarianCount', 'nonVegetarianCount'].includes(name) ? Number(value) : value }))
+    setForm((current) => {
+      if (name === 'vegetarianCount') {
+        const vegetarianCount = Number(value)
+        const total = current.adults + current.toddlers
+        return { ...current, vegetarianCount, nonVegetarianCount: total - vegetarianCount }
+      }
+      if (name === 'nonVegetarianCount') {
+        const nonVegetarianCount = Number(value)
+        const total = current.adults + current.toddlers
+        return { ...current, nonVegetarianCount, vegetarianCount: total - nonVegetarianCount }
+      }
+      if (name === 'adults' || name === 'toddlers') {
+        const next = { ...current, [name]: Number(value) }
+        const total = next.adults + next.toddlers
+        const vegetarianCount = Math.min(next.vegetarianCount, total)
+        return { ...next, vegetarianCount, nonVegetarianCount: total - vegetarianCount }
+      }
+      return { ...current, [name]: value }
+    })
   }
 
   const submit = async (event) => {
     event.preventDefault()
-    if (form.attending && form.vegetarianCount + form.nonVegetarianCount > form.adults + form.toddlers) {
-      setError('Meal selections cannot be more than the total number of guests.')
+    if (form.attending && form.vegetarianCount + form.nonVegetarianCount !== form.adults + form.toddlers) {
+      setError('Meal selections must match the total number of guests.')
       return
     }
     setStatus('sending')
@@ -197,7 +215,7 @@ function InvitationApp() {
         <form onSubmit={submit}>
           <label>Your name<input required maxLength="100" name="guestName" value={form.guestName} onChange={update} placeholder="Family or guest name" /></label>
           <fieldset><legend>Can you make it?</legend><div className="choice-row"><label className={form.attending ? 'selected' : ''}><input type="radio" checked={form.attending} onChange={() => setForm({ ...form, attending: true, adults: Math.max(1, form.adults) })} />Joyfully accepting</label><label className={!form.attending ? 'selected' : ''}><input type="radio" checked={!form.attending} onChange={() => setForm({ ...form, attending: false })} />Sadly declining</label></div></fieldset>
-          {form.attending && <><fieldset><legend>Who is coming from your family?</legend><div className="guest-counts"><label>Adults<select name="adults" value={form.adults} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Toddlers<select name="toddlers" value={form.toddlers} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Total guests: <strong>{form.adults + form.toddlers}</strong></p></fieldset><fieldset><legend>Meal preference</legend><div className="guest-counts"><label>Vegetarian<select name="vegetarianCount" value={form.vegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Non-vegetarian<select name="nonVegetarianCount" value={form.nonVegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Meals selected: <strong>{form.vegetarianCount + form.nonVegetarianCount}</strong> of {form.adults + form.toddlers}</p></fieldset></>}
+          {form.attending && <><fieldset><legend>Who is coming from your family?</legend><div className="guest-counts"><label>Adults<select name="adults" value={form.adults} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Toddlers<select name="toddlers" value={form.toddlers} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Total guests: <strong>{form.adults + form.toddlers}</strong></p></fieldset><fieldset><legend>Meal preference</legend><div className="guest-counts"><label>Vegetarian<select name="vegetarianCount" value={form.vegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Non-vegetarian<select name="nonVegetarianCount" value={form.nonVegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Meal count: <strong>{form.vegetarianCount} veg</strong> · <strong>{form.nonVegetarianCount} non-veg</strong></p></fieldset></>}
           <label>Birthday note <span className="optional">optional</span><textarea maxLength="500" name="message" value={form.message} onChange={update} placeholder="Share a sweet wish or anything we should know…" /></label>
           {error && <p className="error" role="alert">{error}</p>}
           <button className="submit" disabled={status === 'sending'}>{status === 'sending' ? 'Sending…' : 'Send my reply'} <span>→</span></button>

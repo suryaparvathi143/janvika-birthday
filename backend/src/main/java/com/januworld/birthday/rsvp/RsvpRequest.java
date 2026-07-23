@@ -17,8 +17,8 @@ public record RsvpRequest(
         return !attending || (adults + toddlers >= 1 && adults + toddlers <= 20);
     }
 
-    @AssertTrue(message = "Meal selections cannot exceed the number of guests")
+    @AssertTrue(message = "Meal selections must match the number of guests")
     public boolean areMealCountsValid() {
-        return !attending || vegetarianCount + nonVegetarianCount <= adults + toddlers;
+        return !attending || vegetarianCount + nonVegetarianCount == adults + toddlers;
     }
 }
