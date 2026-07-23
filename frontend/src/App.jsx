@@ -115,14 +115,20 @@ function InvitationApp() {
   return <main>
     {showInvitation && <div className="invitation-overlay" role="presentation">
       <div className="invitation-modal" role="dialog" aria-modal="true" aria-labelledby="invitation-title">
+        <div className="invitation-border" aria-hidden="true" />
+        <span className="corner-flourish corner-flourish-left" aria-hidden="true">❀</span>
+        <span className="corner-flourish corner-flourish-right" aria-hidden="true">❀</span>
         <div className="invitation-stars" aria-hidden="true">✦　·　✧</div>
         <p className="invitation-kicker">You’re warmly invited</p>
         <h2 id="invitation-title">Come celebrate<br /><em>{party.childName}</em></h2>
         <p className="invitation-copy">Our little angel is turning {party.age}, and her special day would be brighter with you there.</p>
         <div className="invitation-date">
-          <small>CELEBRATING ON</small>
-          <strong>{party.celebrationDate}</strong>
-          <span>{party.time}</span>
+          <div className="date-medallion" aria-hidden="true"><span>JUL</span><strong>26</strong></div>
+          <div>
+            <small>CELEBRATING ON</small>
+            <strong>{party.celebrationDate}</strong>
+            <span>{party.time}</span>
+          </div>
         </div>
         <button className="open-invitation" autoFocus onClick={() => setShowInvitation(false)}>Open the invitation <span>→</span></button>
         <p className="invitation-signoff">{party.hostNames}</p>
@@ -132,6 +138,7 @@ function InvitationApp() {
       <div className="confetti confetti-one" /><div className="confetti confetti-two" />
       <div className="hero-copy">
         <p className="eyebrow">A little celebration for a very big joy</p>
+        <div className="hero-date-pill"><span>July 26</span><i />12:00 PM</div>
         <h1>{party.headline}<br /><span className="child-name">{party.childName}</span><br /><em>is turning {party.age}!</em></h1>
         <p className="intro">Cake, giggles, wishes—and all the people we love. Please join us to celebrate her special day.</p>
         <a className="primary-link" href="#rsvp">Say you’ll be there <span>↓</span></a>
@@ -151,7 +158,7 @@ function InvitationApp() {
           <Detail icon="⌂" label="WHERE">{party.venue}<br />{party.address}</Detail>
         </div>
         {party.mapUrl && <a className="text-link" href={party.mapUrl} target="_blank" rel="noreferrer">Open in maps ↗</a>}
-        <p className="birthday-note">Her birthday is <strong>{party.birthday}</strong>. We’re celebrating together the very next day!</p>
+        <p className="birthday-note">{party.birthdayNote}</p>
       </div>
     </section>
 

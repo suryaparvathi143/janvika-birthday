@@ -3,9 +3,9 @@ export const party = {
   childName: 'Janvika Chowdary',
   headline: 'Our Little Angel',
   age: 6,
-  birthday: 'July 25, 2026',
+  birthday: 'July 26, 2026',
   celebrationDate: 'Sunday, July 26, 2026',
-  time: '3:00 PM – 6:00 PM',
+  time: '12:00 PM',
   venue: 'Our Home',
   address: 'Add the party address here',
   mapUrl: '',
@@ -13,4 +13,5 @@ export const party = {
   favoriteThings: ['rainbows', 'stories', 'dancing'],
   about: 'She fills every day with bright questions, big hugs, and the happiest little dances. We would love for you to help us make her birthday extra special.',
   hostNames: 'With love, her family',
+  birthdayNote: 'Her birthday celebration begins at noon on Sunday, July 26. We would love to celebrate this joyful day with you!',
 }
