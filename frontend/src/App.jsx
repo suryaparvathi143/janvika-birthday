@@ -105,6 +105,8 @@ function RsvpDetails() {
   const totalGuests = attending.reduce((total, response) => total + response.partySize, 0)
   const adults = attending.reduce((total, response) => total + response.adults, 0)
   const toddlers = attending.reduce((total, response) => total + response.toddlers, 0)
+  const vegetarianGuests = attending.reduce((total, response) => total + response.vegetarianCount, 0)
+  const nonVegetarianGuests = attending.reduce((total, response) => total + response.nonVegetarianCount, 0)
 
   return <main className="details-page">
     <header className="details-header">
@@ -120,6 +122,8 @@ function RsvpDetails() {
         <div><small>COMING</small><strong>{attending.length}</strong></div>
         <div><small>TOTAL GUESTS</small><strong>{totalGuests}</strong></div>
         <div><small>ADULTS / TODDLERS</small><strong>{adults} / {toddlers}</strong></div>
+        <div><small>TOTAL VEG</small><strong>{vegetarianGuests}</strong></div>
+        <div><small>TOTAL NON-VEG</small><strong>{nonVegetarianGuests}</strong></div>
       </section>
       <section className="invitation-manager">
         <div><p className="eyebrow">WhatsApp invitations</p><h2>Send your guest list</h2><p>Guests are sent only after you press send. “Accepted” means WhatsApp accepted the request, not that the guest has read it.</p></div>
