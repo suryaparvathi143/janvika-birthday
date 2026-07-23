@@ -11,13 +11,13 @@ class RsvpRequestTest {
 
     @Test
     void attendingGuestMustIncludeAtLeastOnePerson() {
-        var request = new RsvpRequest("Sam", true, 0, 0, 0, "");
+        var request = new RsvpRequest("Sam", true, 0, 0, 0, 0, 0, "");
         assertThat(validator.validate(request)).isNotEmpty();
     }
 
     @Test
     void decliningGuestMayUseZeroPartySize() {
-        var request = new RsvpRequest("Sam", false, 0, 0, 0, "");
+        var request = new RsvpRequest("Sam", false, 0, 0, 0, 0, 0, "");
         assertThat(validator.validate(request)).isEmpty();
     }
 }

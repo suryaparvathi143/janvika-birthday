@@ -9,8 +9,6 @@ export const party = {
   venue: 'Scioto Park, Scioto South Shelter',
   address: '7377 Riverside Dr, Dublin, OH 43017',
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=7377+Riverside+Dr%2C+Dublin%2C+OH+43017',
-  rsvpBy: 'July 20, 2026',
-  favoriteThings: ['rainbows', 'stories', 'dancing'],
   about: 'She fills every day with bright questions, big hugs, and the happiest little dances. We would love for you to help us make her birthday extra special.',
   hostNames: 'With love, her family',
   birthdayNote: 'Her birthday celebration begins at noon on Sunday, July 26. We would love to celebrate this joyful day with you!',

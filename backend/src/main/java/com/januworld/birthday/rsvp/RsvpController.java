@@ -25,6 +25,8 @@ public class RsvpController {
                 request.attending(),
                 request.adults(),
                 request.toddlers(),
+                request.vegetarianCount(),
+                request.nonVegetarianCount(),
                 request.message() == null ? "" : request.message().trim()
         ));
         return Map.of("id", saved.getId(), "attending", saved.isAttending());

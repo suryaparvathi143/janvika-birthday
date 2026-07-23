@@ -71,7 +71,7 @@ function RsvpDetails() {
           {attending.length === 0 && <p className="empty-response">No accepting responses yet.</p>}
           {attending.map((response) => <article className="response-card" key={response.id}>
             <div className="response-top"><h3>{response.guestName}</h3><div className="response-actions"><time>{new Date(response.createdAt).toLocaleDateString()}</time><button className="delete-response" type="button" onClick={() => deleteResponse(response)} disabled={deletingId === response.id}>{deletingId === response.id ? 'Deleting…' : 'Delete'}</button></div></div>
-            <p className="headcount"><span>{response.adults} {response.adults === 1 ? 'adult' : 'adults'}</span><span>{response.toddlers} {response.toddlers === 1 ? 'toddler' : 'toddlers'}</span><strong>{response.partySize} total</strong></p>
+            <p className="headcount"><span>{response.adults} {response.adults === 1 ? 'adult' : 'adults'}</span><span>{response.toddlers} {response.toddlers === 1 ? 'toddler' : 'toddlers'}</span><span>{response.vegetarianCount} veg</span><span>{response.nonVegetarianCount} non-veg</span><strong>{response.partySize} total</strong></p>
             {response.message && <p className="guest-message">“{response.message}”</p>}
           </article>)}
         </div>
@@ -92,7 +92,7 @@ function RsvpDetails() {
 
 function InvitationApp() {
   const [showInvitation, setShowInvitation] = useState(true)
-  const [form, setForm] = useState({ guestName: '', attending: true, adults: 1, toddlers: 0, message: '' })
+  const [form, setForm] = useState({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
 
@@ -103,11 +103,15 @@ function InvitationApp() {
 
   const update = (event) => {
     const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: ['adults', 'toddlers'].includes(name) ? Number(value) : value }))
+    setForm((current) => ({ ...current, [name]: ['adults', 'toddlers', 'vegetarianCount', 'nonVegetarianCount'].includes(name) ? Number(value) : value }))
   }
 
   const submit = async (event) => {
     event.preventDefault()
+    if (form.attending && form.vegetarianCount + form.nonVegetarianCount > form.adults + form.toddlers) {
+      setError('Meal selections cannot be more than the total number of guests.')
+      return
+    }
     setStatus('sending')
     setError('')
     try {
@@ -118,6 +122,8 @@ function InvitationApp() {
           ...form,
           adults: form.attending ? form.adults : 0,
           toddlers: form.attending ? form.toddlers : 0,
+          vegetarianCount: form.attending ? form.vegetarianCount : 0,
+          nonVegetarianCount: form.attending ? form.nonVegetarianCount : 0,
           partySize: form.attending ? form.adults + form.toddlers : 0,
         }),
       })
@@ -181,17 +187,17 @@ function InvitationApp() {
 
     <section className="about-section">
       <div><p className="eyebrow">Meet the birthday girl</p><h2>A pocketful of sunshine</h2></div>
-      <div><p>{party.about}</p><p className="favorites">Currently loving: {party.favoriteThings.join(' · ')}</p></div>
+        <div><p>{party.about}</p></div>
     </section>
 
     <section className="rsvp-section" id="rsvp">
-      <div className="rsvp-heading"><p className="eyebrow">Kindly reply</p><h2>Will you celebrate with us?</h2><p>Please respond by {party.rsvpBy}, so we can save enough cake.</p></div>
+      <div className="rsvp-heading"><p className="eyebrow">Kindly reply</p><h2>Will you celebrate with us?</h2></div>
       <div className="form-card">
-        {status === 'success' ? <div className="success" role="status"><span>✓</span><h3>{form.attending ? 'We can’t wait to see you!' : 'Thank you for letting us know.'}</h3><p>Your reply has been saved. {form.attending ? `We’ve reserved space for ${form.adults + form.toddlers} (${form.adults} ${form.adults === 1 ? 'adult' : 'adults'} and ${form.toddlers} ${form.toddlers === 1 ? 'toddler' : 'toddlers'}).` : `We’ll miss you and appreciate the birthday wishes.`}</p><button onClick={() => { setStatus('idle'); setForm({ guestName: '', attending: true, adults: 1, toddlers: 0, message: '' }) }}>Send another reply</button></div> :
+        {status === 'success' ? <div className="success" role="status"><span>✓</span><h3>{form.attending ? 'We can’t wait to see you!' : 'Thank you for letting us know.'}</h3><p>Your reply has been saved. {form.attending ? `We’ve reserved space for ${form.adults + form.toddlers} (${form.adults} ${form.adults === 1 ? 'adult' : 'adults'} and ${form.toddlers} ${form.toddlers === 1 ? 'toddler' : 'toddlers'}).` : `We’ll miss you and appreciate the birthday wishes.`}</p><button onClick={() => { setStatus('idle'); setForm({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' }) }}>Send another reply</button></div> :
         <form onSubmit={submit}>
           <label>Your name<input required maxLength="100" name="guestName" value={form.guestName} onChange={update} placeholder="Family or guest name" /></label>
           <fieldset><legend>Can you make it?</legend><div className="choice-row"><label className={form.attending ? 'selected' : ''}><input type="radio" checked={form.attending} onChange={() => setForm({ ...form, attending: true, adults: Math.max(1, form.adults) })} />Joyfully accepting</label><label className={!form.attending ? 'selected' : ''}><input type="radio" checked={!form.attending} onChange={() => setForm({ ...form, attending: false })} />Sadly declining</label></div></fieldset>
-          {form.attending && <fieldset><legend>Who is coming from your family?</legend><div className="guest-counts"><label>Adults<select name="adults" value={form.adults} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Toddlers<select name="toddlers" value={form.toddlers} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Total guests: <strong>{form.adults + form.toddlers}</strong></p></fieldset>}
+          {form.attending && <><fieldset><legend>Who is coming from your family?</legend><div className="guest-counts"><label>Adults<select name="adults" value={form.adults} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Toddlers<select name="toddlers" value={form.toddlers} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Total guests: <strong>{form.adults + form.toddlers}</strong></p></fieldset><fieldset><legend>Meal preference</legend><div className="guest-counts"><label>Vegetarian<select name="vegetarianCount" value={form.vegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Non-vegetarian<select name="nonVegetarianCount" value={form.nonVegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Meals selected: <strong>{form.vegetarianCount + form.nonVegetarianCount}</strong> of {form.adults + form.toddlers}</p></fieldset></>}
           <label>Birthday note <span className="optional">optional</span><textarea maxLength="500" name="message" value={form.message} onChange={update} placeholder="Share a sweet wish or anything we should know…" /></label>
           {error && <p className="error" role="alert">{error}</p>}
           <button className="submit" disabled={status === 'sending'}>{status === 'sending' ? 'Sending…' : 'Send my reply'} <span>→</span></button>

@@ -19,6 +19,10 @@ public class Rsvp {
     private int adults;
     @Column(nullable = false)
     private int toddlers;
+    @Column(nullable = false)
+    private int vegetarianCount;
+    @Column(nullable = false)
+    private int nonVegetarianCount;
     @Column(length = 500)
     private String message;
     @Column(nullable = false, updatable = false)
@@ -26,12 +30,14 @@ public class Rsvp {
 
     protected Rsvp() {}
 
-    public Rsvp(String guestName, boolean attending, int adults, int toddlers, String message) {
+    public Rsvp(String guestName, boolean attending, int adults, int toddlers, int vegetarianCount, int nonVegetarianCount, String message) {
         this.guestName = guestName;
         this.attending = attending;
         this.adults = attending ? adults : 0;
         this.toddlers = attending ? toddlers : 0;
         this.partySize = this.adults + this.toddlers;
+        this.vegetarianCount = attending ? vegetarianCount : 0;
+        this.nonVegetarianCount = attending ? nonVegetarianCount : 0;
         this.message = message;
         this.createdAt = Instant.now();
     }
@@ -42,6 +48,8 @@ public class Rsvp {
     public int getPartySize() { return partySize; }
     public int getAdults() { return adults; }
     public int getToddlers() { return toddlers; }
+    public int getVegetarianCount() { return vegetarianCount; }
+    public int getNonVegetarianCount() { return nonVegetarianCount; }
     public String getMessage() { return message; }
     public Instant getCreatedAt() { return createdAt; }
 }

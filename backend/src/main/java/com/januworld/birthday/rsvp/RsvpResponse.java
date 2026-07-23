@@ -9,6 +9,8 @@ public record RsvpResponse(
         int adults,
         int toddlers,
         int partySize,
+        int vegetarianCount,
+        int nonVegetarianCount,
         String message,
         Instant createdAt
 ) {
@@ -20,6 +22,8 @@ public record RsvpResponse(
                 rsvp.getAdults(),
                 rsvp.getToddlers(),
                 rsvp.getPartySize(),
+                rsvp.getVegetarianCount(),
+                rsvp.getNonVegetarianCount(),
                 rsvp.getMessage(),
                 rsvp.getCreatedAt()
         );
