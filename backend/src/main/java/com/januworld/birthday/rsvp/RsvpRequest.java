@@ -10,7 +10,8 @@ public record RsvpRequest(
         @Min(0) @Max(20) int toddlers,
         @Min(0) @Max(20) int vegetarianCount,
         @Min(0) @Max(20) int nonVegetarianCount,
-        @Size(max = 500) String message
+        @Size(max = 500) String message,
+        boolean confirmDuplicate
 ) {
     @AssertTrue(message = "Guest counts must total between 1 and 20 when attending")
     public boolean isPartySizeValid() {

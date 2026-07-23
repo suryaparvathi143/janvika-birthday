@@ -206,16 +206,8 @@ function InvitationApp() {
     })
   }
 
-  const submit = async (event) => {
-    event.preventDefault()
-    if (form.attending && form.vegetarianCount + form.nonVegetarianCount !== form.adults + form.toddlers) {
-      setError('Meal selections must match the total number of guests.')
-      return
-    }
-    setStatus('sending')
-    setError('')
-    try {
-      const response = await fetch(`${API_URL}/api/rsvps`, {
+  const saveReply = async (confirmDuplicate = false) => {
+    const response = await fetch(`${API_URL}/api/rsvps`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -225,9 +217,36 @@ function InvitationApp() {
           vegetarianCount: form.attending ? form.vegetarianCount : 0,
           nonVegetarianCount: form.attending ? form.nonVegetarianCount : 0,
           partySize: form.attending ? form.adults + form.toddlers : 0,
+          confirmDuplicate,
         }),
       })
-      if (!response.ok) throw new Error('We could not save your reply.')
+    if (response.status === 409) {
+      const duplicate = await response.json()
+      if (duplicate.code === 'POSSIBLE_DUPLICATE') {
+        const names = duplicate.matches.join(', ')
+        const proceed = window.confirm(`An RSVP already exists for ${names}. Is this you or your family? Press OK only if you want to create a new entry.`)
+        if (!proceed) return false
+        return saveReply(true)
+      }
+    }
+    if (!response.ok) throw new Error('We could not save your reply.')
+    return true
+  }
+
+  const submit = async (event) => {
+    event.preventDefault()
+    if (form.attending && form.vegetarianCount + form.nonVegetarianCount !== form.adults + form.toddlers) {
+      setError('Meal selections must match the total number of guests.')
+      return
+    }
+    setStatus('sending')
+    setError('')
+    try {
+      const saved = await saveReply()
+      if (!saved) {
+        setStatus('idle')
+        return
+      }
       setStatus('success')
     } catch (err) {
       setError(`${err.message} Please try again in a moment.`)
