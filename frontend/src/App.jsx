@@ -11,6 +11,14 @@ function Detail({ icon, label, children }) {
   return <div className="detail"><span className="detail-icon" aria-hidden="true">{icon}</span><div><small>{label}</small><strong>{children}</strong></div></div>
 }
 
+function matchingGuestNames(submittedName, existingNames) {
+  const submittedWords = new Set(submittedName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((word) => word.length >= 2))
+  return existingNames.filter((existingName) => {
+    const existingWords = existingName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((word) => word.length >= 2)
+    return existingWords.some((word) => submittedWords.has(word))
+  })
+}
+
 function ConfirmPopup({ title, message, confirmLabel, tone, onConfirm, onCancel }) {
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -237,6 +245,7 @@ function InvitationApp() {
   const [form, setForm] = useState({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' })
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+  const [existingGuestNames, setExistingGuestNames] = useState([])
   const { requestConfirmation, confirmationPopup } = useConfirmPopup()
   const whatsappShareText = encodeURIComponent(`You're warmly invited to our little angel ${party.childName}'s birthday celebration on July 26 at 12 PM! Please RSVP here: https://www.januworld.com`)
 
@@ -244,6 +253,13 @@ function InvitationApp() {
     document.body.style.overflow = showInvitation ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [showInvitation])
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/rsvps/names`)
+      .then((response) => response.ok ? response.json() : [])
+      .then(setExistingGuestNames)
+      .catch(() => setExistingGuestNames([]))
+  }, [])
 
   const update = (event) => {
     const { name, value } = event.target
@@ -287,9 +303,9 @@ function InvitationApp() {
       if (duplicate.code === 'POSSIBLE_DUPLICATE') {
         const names = duplicate.matches.join(', ')
         const proceed = await requestConfirmation({
-          title: 'A similar reply exists',
-          message: `We found an RSVP for ${names}. Is this you or your family? Continue only if you need a new entry.`,
-          confirmLabel: 'Create new reply',
+          title: 'Guest already found',
+          message: `Guest found with the same name: ${names}. Do you want to continue?`,
+          confirmLabel: 'Continue',
           tone: 'notice',
         })
         if (!proceed) return false
@@ -309,11 +325,26 @@ function InvitationApp() {
     setStatus('sending')
     setError('')
     try {
-      const saved = await saveReply()
+      const matchingNames = matchingGuestNames(form.guestName, existingGuestNames)
+      let duplicateConfirmed = false
+      if (matchingNames.length > 0) {
+        duplicateConfirmed = await requestConfirmation({
+          title: 'Guest already found',
+          message: `Guest found with the same name: ${matchingNames.join(', ')}. Do you want to continue?`,
+          confirmLabel: 'Continue',
+          tone: 'notice',
+        })
+        if (!duplicateConfirmed) {
+          setStatus('idle')
+          return
+        }
+      }
+      const saved = await saveReply(duplicateConfirmed)
       if (!saved) {
         setStatus('idle')
         return
       }
+      setExistingGuestNames((current) => [...current, form.guestName.trim()])
       setStatus('success')
     } catch (err) {
       setError(`${err.message} Please try again in a moment.`)

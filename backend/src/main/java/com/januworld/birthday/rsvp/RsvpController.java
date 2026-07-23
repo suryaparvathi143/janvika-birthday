@@ -56,6 +56,14 @@ public class RsvpController {
                 .toList();
     }
 
+    @GetMapping("/names")
+    public List<String> listGuestNames() {
+        return repository.findAllByOrderByCreatedAtDesc().stream()
+                .map(Rsvp::getGuestName)
+                .distinct()
+                .toList();
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
