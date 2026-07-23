@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/birthday}
-    username: ${DATABASE_USERNAME:birthday}
-    password: ${DATABASE_PASSWORD:birthday}
+    url: ${DATABASE_URL:${NF_BIRTHDAY_DB_JDBC_POSTGRES_URI:jdbc:postgresql://localhost:5432/birthday}}
+    username: ${DATABASE_USERNAME:${NF_BIRTHDAY_DB_USERNAME:birthday}}
+    password: ${DATABASE_PASSWORD:${NF_BIRTHDAY_DB_PASSWORD:birthday}}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -15,4 +15,3 @@ spring:
 
 app:
   allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
-
