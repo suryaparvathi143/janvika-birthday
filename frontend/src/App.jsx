@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { party } from './partyConfig'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? 'http://localhost:8080'
+    : 'https://p01--birthday-api--qz475gfh2z9z.code.run')
 
 function Detail({ icon, label, children }) {
   return <div className="detail"><span className="detail-icon" aria-hidden="true">{icon}</span><div><small>{label}</small><strong>{children}</strong></div></div>
