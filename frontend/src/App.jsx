@@ -428,6 +428,12 @@ function InvitationApp() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Wake the free Render service while guests read the invitation.
+    // This request is intentionally non-blocking and invisible to the UI.
+    fetch(`${API_URL}/health`, { cache: 'no-store' }).catch(() => {})
+  }, [])
+
   return window.location.pathname.replace(/\/$/, '') === '/naveen'
     ? <RsvpDetails />
     : <InvitationApp />
