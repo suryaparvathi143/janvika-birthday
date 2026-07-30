@@ -1,0 +1,36 @@
+name: Keep Render API awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping birthday API
+        env:
+          PING_URL: https://janvika-birthday-api.onrender.com/api/ping
+        run: |
+          status_code="$(curl \
+            --silent \
+            --show-error \
+            --location \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            --max-time 120 \
+            --retry 2 \
+            --retry-delay 5 \
+            "$PING_URL")"
+
+          if [ "$status_code" != "200" ]; then
+            echo "Ping failed with HTTP status $status_code"
+            exit 1
+          fi
+
+          echo "Render API is awake."

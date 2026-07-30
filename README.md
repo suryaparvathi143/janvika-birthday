@@ -86,3 +86,13 @@ Northflank's free Sandbox tier fits this project with two services and one datab
 
 The invitation is at the domain root. The unlisted response dashboard is at
 `/naveen`; it is hidden by its URL but is not password-protected.
+# Render keep-alive
+
+The backend exposes `GET /api/ping` (and the existing `GET /health`) as
+lightweight health endpoints. The `Keep Render API awake` GitHub Actions
+workflow calls `/api/ping` every 10 minutes and can also be run manually from
+the repository's Actions page.
+
+Render free services can still restart at Render's discretion, and scheduled
+GitHub Actions can occasionally be delayed. This workflow reduces idle cold
+starts but does not provide an uptime guarantee.
