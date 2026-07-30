@@ -76,6 +76,9 @@ function RsvpDetails() {
   const [invitationForm, setInvitationForm] = useState({ guestName: '', phoneNumber: '' })
   const [invitationStatus, setInvitationStatus] = useState('')
   const [invitationError, setInvitationError] = useState('')
+  const [photos, setPhotos] = useState([])
+  const [photoStatus, setPhotoStatus] = useState('')
+  const [photoError, setPhotoError] = useState('')
   const { requestConfirmation, confirmationPopup } = useConfirmPopup()
 
   useEffect(() => {
@@ -87,6 +90,14 @@ function RsvpDetails() {
       .then(setResponses)
       .catch((error) => setLoadError(error.message))
       .finally(() => setLoading(false))
+
+    fetch(`${API_URL}/api/photos`)
+      .then((response) => {
+        if (!response.ok) throw new Error('Could not load photos')
+        return response.json()
+      })
+      .then(setPhotos)
+      .catch((error) => setPhotoError(error.message))
   }, [])
 
   const deleteResponse = async (response) => {
@@ -168,6 +179,35 @@ function RsvpDetails() {
     }
   }
 
+  const uploadPhoto = async (event) => {
+    event.preventDefault()
+    const file = event.currentTarget.elements.photo.files[0]
+    if (!file) return
+    setPhotoStatus('Uploading photo…')
+    setPhotoError('')
+    const formData = new FormData()
+    formData.append('photo', file)
+    try {
+      const response = await fetch(`${API_URL}/api/photos`, {
+        method: 'POST',
+        headers: { 'X-Admin-Token': adminToken },
+        body: formData,
+      })
+      if (!response.ok) {
+        throw new Error(response.status === 401
+          ? 'Enter the correct private invitation token before uploading.'
+          : 'Could not upload this photo.')
+      }
+      const uploadedPhoto = await response.json()
+      setPhotos((current) => [uploadedPhoto, ...current])
+      setPhotoStatus(`${uploadedPhoto.fileName} uploaded successfully.`)
+      event.currentTarget.reset()
+    } catch (error) {
+      setPhotoStatus('')
+      setPhotoError(error.message)
+    }
+  }
+
   const attending = responses.filter((response) => response.attending)
   const declined = responses.filter((response) => !response.attending)
   const totalGuests = attending.reduce((total, response) => total + response.partySize, 0)
@@ -213,6 +253,24 @@ function RsvpDetails() {
               {invitationGuests.map((guest) => <div className="invitation-guest" key={guest.id}><div><strong>{guest.guestName}</strong><span>{guest.phoneNumber}</span></div><div><b className={`invitation-badge ${guest.invitationStatus.toLowerCase()}`}>{guest.invitationStatus.toLowerCase()}</b>{guest.lastError && <small>{guest.lastError}</small>}</div></div>)}
             </div>
           </>}
+        </div>
+      </section>
+      <section className="photo-manager">
+        <div className="photo-manager-heading">
+          <div><p className="eyebrow">Birthday gallery</p><h2>Celebration photos</h2></div>
+          <form className="photo-upload" onSubmit={uploadPhoto}>
+            <label>Choose a photo<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
+            <button type="submit" disabled={!adminToken}>Upload to database</button>
+          </form>
+        </div>
+        {photoStatus && <p className="invitation-state">{photoStatus}</p>}
+        {photoError && <p className="error" role="alert">{photoError}</p>}
+        <div className="photo-grid">
+          {photos.length === 0 && !photoError && <p className="empty-response">No photos uploaded yet.</p>}
+          {photos.map((photo) => <figure key={photo.id}>
+            <img src={`${API_URL}/api/photos/${photo.id}/content`} alt={photo.fileName} loading="lazy" />
+            <figcaption><strong>{photo.fileName}</strong><span>{(photo.fileSize / 1024 / 1024).toFixed(1)} MB</span></figcaption>
+          </figure>)}
         </div>
       </section>
       <section className="response-section">
