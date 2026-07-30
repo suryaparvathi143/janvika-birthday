@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Ping birthday API
         env:
-          PING_URL: https://janvika-birthday-api.onrender.com/api/ping
+          PING_URL: https://janvika-birthday-api.onrender.com/health
         run: |
           status_code="$(curl \
             --silent \
