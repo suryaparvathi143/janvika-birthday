@@ -259,8 +259,10 @@ function RsvpDetails() {
         <div className="photo-manager-heading">
           <div><p className="eyebrow">Birthday gallery</p><h2>Celebration photos</h2></div>
           <form className="photo-upload" onSubmit={uploadPhoto}>
+            <label>Private admin token<input type="password" value={adminToken} onChange={(event) => setAdminToken(event.target.value)} placeholder="Enter your Render admin token" /></label>
             <label>Choose a photo<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
             <button type="submit" disabled={!adminToken}>Upload to database</button>
+            {!adminToken && <small>Enter the private admin token to enable uploading.</small>}
           </form>
         </div>
         {photoStatus && <p className="invitation-state">{photoStatus}</p>}

@@ -161,10 +161,11 @@ fieldset { border: 0; padding: 0; margin: 0; }
 .photo-manager { max-width: 1180px; margin: 65px auto 0; }
 .photo-manager-heading { display: flex; justify-content: space-between; align-items: end; gap: 30px; padding-bottom: 20px; border-bottom: 1px solid #e5d7d6; }
 .photo-manager h2 { margin-top: 10px; font-size: clamp(2rem, 3.6vw, 3.2rem); }
-.photo-upload { display: flex; align-items: end; gap: 12px; }
+.photo-upload { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 12px; }
 .photo-upload input { max-width: 290px; padding: 10px; }
 .photo-upload button { border: 0; border-radius: 999px; padding: 13px 18px; background: #503b4f; color: white; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .photo-upload button:disabled { opacity: .5; cursor: not-allowed; }
+.photo-upload small { grid-column: 1 / -1; color: #8b7481; text-align: right; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 24px; }
 .photo-grid figure { margin: 0; overflow: hidden; border: 1px solid #eadedb; border-radius: 10px; background: white; box-shadow: 0 9px 24px #63435512; }
 .photo-grid img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; background: #eee5e2; }
@@ -177,6 +178,6 @@ fieldset { border: 0; padding: 0; margin: 0; }
 footer { text-align: center; padding: 70px 20px; background: #503b4f; color: #fcebef; }
 footer span { color: #edbd70; font-size: 1.5rem; } footer p { font-family: 'DM Serif Display'; font-size: 1.7rem; margin: 12px; } footer small { color: #cdbdc8; }
 @media (max-width: 800px) { .hero { grid-template-columns: 1fr; padding-top: 60px; min-height: auto; } .cake { margin: 80px auto 70px; } .details-grid, .about-section, .rsvp-section { grid-template-columns: 1fr; } .rsvp-heading { position: static; } .field-row { grid-template-columns: 1fr; } .about-section { gap: 20px; padding-block: 85px; } }
-@media (max-width: 800px) { .summary-grid { grid-template-columns: 1fr 1fr; } .summary-grid div:nth-child(2) { border-right: 0; } .summary-grid div:nth-child(-n+2) { border-bottom: 1px solid #ffffff24; } .response-list, .invitation-manager, .invitation-form, .photo-grid { grid-template-columns: 1fr; } .invitation-manager { padding: 30px; gap: 24px; } .photo-manager-heading, .photo-upload { align-items: stretch; flex-direction: column; } }
+@media (max-width: 800px) { .summary-grid { grid-template-columns: 1fr 1fr; } .summary-grid div:nth-child(2) { border-right: 0; } .summary-grid div:nth-child(-n+2) { border-bottom: 1px solid #ffffff24; } .response-list, .invitation-manager, .invitation-form, .photo-grid, .photo-upload { grid-template-columns: 1fr; } .invitation-manager { padding: 30px; gap: 24px; } .photo-manager-heading { align-items: stretch; flex-direction: column; } .photo-upload small { grid-column: auto; text-align: left; } }
 @media (max-width: 480px) { h1 { font-size: 3rem; } h2 { font-size: 2.25rem; } .choice-row, .guest-counts { grid-template-columns: 1fr; } .details-card { padding-inline: 24px; } .detail strong { font-size: 1.05rem; } .invitation-overlay { padding: 12px; } .invitation-modal { padding: 42px 28px 34px; border-radius: 18px; } .invitation-date { grid-template-columns: 60px 1fr; gap: 14px; padding-inline: 4px; } .date-medallion { width: 58px; height: 64px; } .invitation-date strong { font-size: 1.02rem; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
