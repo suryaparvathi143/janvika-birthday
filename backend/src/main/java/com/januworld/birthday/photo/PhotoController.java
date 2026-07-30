@@ -1,6 +1,5 @@
 package com.januworld.birthday.photo;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -8,7 +7,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,8 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +25,6 @@ public class PhotoController {
     private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
 
     private final PhotoRepository repository;
-    @Value("${app.whatsapp.admin-token:}") private String adminToken;
 
     public PhotoController(PhotoRepository repository) {
         this.repository = repository;
@@ -53,9 +48,7 @@ public class PhotoController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PhotoMetadata> upload(
-            @RequestHeader(value = "X-Admin-Token", defaultValue = "") String suppliedToken,
             @RequestParam("photo") MultipartFile photo) {
-        requireAdmin(suppliedToken);
         String contentType = photo.getContentType() == null ? "" : photo.getContentType().toLowerCase();
         if (photo.isEmpty() || photo.getSize() > MAX_PHOTO_SIZE || !ALLOWED_TYPES.contains(contentType)) {
             throw new ResponseStatusException(
@@ -68,14 +61,6 @@ public class PhotoController {
                     .body(repository.save(fileName, contentType, photo.getBytes()));
         } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read the uploaded photo");
-        }
-    }
-
-    private void requireAdmin(String suppliedToken) {
-        if (adminToken.isBlank() || !MessageDigest.isEqual(
-                adminToken.getBytes(StandardCharsets.UTF_8),
-                suppliedToken.getBytes(StandardCharsets.UTF_8))) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authorized to upload photos");
         }
     }
 
