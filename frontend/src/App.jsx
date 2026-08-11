@@ -79,6 +79,7 @@ function RsvpDetails() {
   const [photos, setPhotos] = useState([])
   const [photoStatus, setPhotoStatus] = useState('')
   const [photoError, setPhotoError] = useState('')
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const { requestConfirmation, confirmationPopup } = useConfirmPopup()
 
   useEffect(() => {
@@ -181,27 +182,36 @@ function RsvpDetails() {
 
   const uploadPhoto = async (event) => {
     event.preventDefault()
-    const file = event.currentTarget.elements.photo.files[0]
-    if (!file) return
-    setPhotoStatus('Uploading photo…')
+    const form = event.currentTarget
+    const files = Array.from(form.elements.photos.files)
+    if (files.length === 0) return
+    setUploadingPhotos(true)
     setPhotoError('')
-    const formData = new FormData()
-    formData.append('photo', file)
+    const uploadedPhotos = []
     try {
-      const response = await fetch(`${API_URL}/api/photos`, {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error('Could not upload this photo.')
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index]
+        setPhotoStatus(`Uploading ${index + 1} of ${files.length}: ${file.name}`)
+        const formData = new FormData()
+        formData.append('photo', file)
+        const response = await fetch(`${API_URL}/api/photos`, {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error(`${file.name} could not be uploaded.`)
+        }
+        const uploadedPhoto = await response.json()
+        uploadedPhotos.push(uploadedPhoto)
+        setPhotos((current) => [uploadedPhoto, ...current])
       }
-      const uploadedPhoto = await response.json()
-      setPhotos((current) => [uploadedPhoto, ...current])
-      setPhotoStatus(`${uploadedPhoto.fileName} uploaded successfully.`)
-      event.currentTarget.reset()
+      setPhotoStatus(`${uploadedPhotos.length} photo${uploadedPhotos.length === 1 ? '' : 's'} uploaded successfully.`)
     } catch (error) {
-      setPhotoStatus('')
+      setPhotoStatus(uploadedPhotos.length > 0 ? `${uploadedPhotos.length} of ${files.length} photos uploaded.` : '')
       setPhotoError(error.message)
+    } finally {
+      setUploadingPhotos(false)
+      form.reset()
     }
   }
 
@@ -256,8 +266,8 @@ function RsvpDetails() {
         <div className="photo-manager-heading">
           <div><p className="eyebrow">Birthday gallery</p><h2>Celebration photos</h2></div>
           <form className="photo-upload" onSubmit={uploadPhoto}>
-            <label>Choose a photo<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
-            <button type="submit">Upload to database</button>
+            <label>Choose photos<input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple required /></label>
+            <button type="submit" disabled={uploadingPhotos}>{uploadingPhotos ? 'Uploading…' : 'Upload photos to database'}</button>
           </form>
         </div>
         {photoStatus && <p className="invitation-state">{photoStatus}</p>}
