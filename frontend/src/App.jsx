@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { party } from './partyConfig'
 
+const configuredApiUrl = import.meta.env.VITE_API_URL === '/api' ? '' : import.meta.env.VITE_API_URL
 const API_URL =
-  import.meta.env.VITE_API_URL ||
+  configuredApiUrl ||
   (import.meta.env.DEV
     ? 'http://localhost:8080'
-    : 'https://p01--birthday-api--qz475gfh2z9z.code.run')
+    : '')
 
 function Detail({ icon, label, children }) {
   return <div className="detail"><span className="detail-icon" aria-hidden="true">{icon}</span><div><small>{label}</small><strong>{children}</strong></div></div>
@@ -192,11 +193,10 @@ function RsvpDetails() {
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index]
         setPhotoStatus(`Uploading ${index + 1} of ${files.length}: ${file.name}`)
-        const formData = new FormData()
-        formData.append('photo', file)
         const response = await fetch(`${API_URL}/api/photos`, {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name) },
+          body: file,
         })
         if (!response.ok) {
           throw new Error(`${file.name} could not be uploaded.`)

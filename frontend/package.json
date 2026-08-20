@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@neondatabase/serverless": "latest",
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "react": "latest",
@@ -16,4 +17,3 @@
   },
   "devDependencies": {}
 }
-
