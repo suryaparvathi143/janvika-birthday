@@ -531,6 +531,7 @@ function CelebrationGallery() {
   const [error, setError] = useState('')
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedGuest, setSelectedGuest] = useState('all')
+  const [galleryIndex, setGalleryIndex] = useState(0)
 
   useEffect(() => {
     fetch(`${API_URL}/api/photos`)
@@ -560,6 +561,21 @@ function CelebrationGallery() {
   const filteredPhotos = selectedGuest === 'all'
     ? photos
     : photos.filter((photo) => photo.guestName === selectedGuest)
+
+  useEffect(() => {
+    setGalleryIndex(0)
+  }, [selectedGuest])
+
+  useEffect(() => {
+    if (filteredPhotos.length <= 1) return undefined
+    const timer = window.setInterval(() => {
+      setGalleryIndex((current) => (current + 1) % filteredPhotos.length)
+    }, 4200)
+    return () => window.clearInterval(timer)
+  }, [filteredPhotos.length, selectedGuest])
+
+  const showPreviousPhoto = () => setGalleryIndex((current) => (current - 1 + filteredPhotos.length) % filteredPhotos.length)
+  const showNextPhoto = () => setGalleryIndex((current) => (current + 1) % filteredPhotos.length)
 
   return <main className="celebration-page">
     <section className="celebration-hero">
@@ -606,11 +622,26 @@ function CelebrationGallery() {
       {error && <div className="gallery-state error" role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></div>}
       {!loading && !error && photos.length === 0 && <div className="gallery-state gallery-empty"><span aria-hidden="true">♡</span><h3>Photos are coming soon</h3><p>We’re collecting our favorite moments from Janvika’s celebration. Please visit again soon.</p></div>}
       {!loading && !error && photos.length > 0 && filteredPhotos.length === 0 && <div className="gallery-state gallery-empty"><h3>No photos found</h3><p>Choose another guest to see their celebration photos.</p></div>}
-      {!loading && !error && filteredPhotos.length > 0 && <div className="public-photo-grid">
-        {filteredPhotos.map((photo, index) => <button type="button" className={index === 0 ? 'featured-photo' : ''} key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`}>
-          <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading={index < 3 ? 'eager' : 'lazy'} />
-          <span>{photo.guestName || 'Celebration'} <b>View ↗</b></span>
-        </button>)}
+      {!loading && !error && filteredPhotos.length === 1 && <div className="single-public-photo">
+        <button type="button" onClick={() => setSelectedPhoto(filteredPhotos[0])} aria-label="Open celebration photo">
+          <img src={photoUrl(filteredPhotos[0])} alt="Janvika’s birthday celebration moment" />
+          <span>{filteredPhotos[0].guestName || 'Celebration'} <b>View ↗</b></span>
+        </button>
+      </div>}
+      {!loading && !error && filteredPhotos.length > 1 && <div className="photo-carousel" aria-roledescription="carousel" aria-label="Celebration photos">
+        <div className="photo-carousel-window">
+          <div className="photo-carousel-track" style={{ transform: `translateX(-${galleryIndex * 100}%)` }}>
+            {filteredPhotos.map((photo, index) => <button type="button" className="photo-carousel-slide" key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`} aria-hidden={index !== galleryIndex} tabIndex={index === galleryIndex ? 0 : -1}>
+              <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading={index < 3 ? 'eager' : 'lazy'} />
+              <span>{photo.guestName || 'Celebration'} <b>View photo ↗</b></span>
+            </button>)}
+          </div>
+        </div>
+        <button type="button" className="carousel-arrow carousel-previous" onClick={showPreviousPhoto} aria-label="Previous photo">←</button>
+        <button type="button" className="carousel-arrow carousel-next" onClick={showNextPhoto} aria-label="Next photo">→</button>
+        <div className="carousel-dots" aria-label="Choose a photo">
+          {filteredPhotos.map((photo, index) => <button type="button" key={photo.id} className={index === galleryIndex ? 'active' : ''} onClick={() => setGalleryIndex(index)} aria-label={`Show photo ${index + 1}`} aria-current={index === galleryIndex ? 'true' : undefined} />)}
+        </div>
       </div>}
     </section>
 
