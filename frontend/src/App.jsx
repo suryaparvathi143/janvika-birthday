@@ -244,7 +244,7 @@ function RsvpDetails() {
       <section className="invitation-manager">
         <div><p className="eyebrow">WhatsApp invitations</p><h2>Send your guest list</h2><p>Guests are sent only after you press send. “Accepted” means WhatsApp accepted the request, not that the guest has read it.</p></div>
         <div className="invitation-panel">
-          <label>Private invitation token<input type="password" value={adminToken} onChange={(event) => setAdminToken(event.target.value)} placeholder="Enter your Render admin token" /></label>
+          <label>Private invitation token<input type="password" value={adminToken} onChange={(event) => setAdminToken(event.target.value)} placeholder="Enter your invitation admin token" /></label>
           <button type="button" className="token-button" disabled={!adminToken} onClick={loadInvitationGuests}>Open invitation list</button>
           {adminToken && <form className="invitation-form" onSubmit={addInvitationGuest}>
             <label>Guest name<input required maxLength="100" value={invitationForm.guestName} onChange={(event) => setInvitationForm({ ...invitationForm, guestName: event.target.value })} placeholder="Guest name" /></label>
