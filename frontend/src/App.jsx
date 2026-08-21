@@ -492,14 +492,105 @@ function InvitationApp() {
   </main>
 }
 
-export default function App() {
+function CelebrationGallery() {
+  const [photos, setPhotos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [selectedPhoto, setSelectedPhoto] = useState(null)
+
   useEffect(() => {
-    // Wake the free Render service while guests read the invitation.
-    // This request is intentionally non-blocking and invisible to the UI.
-    fetch(`${API_URL}/health`, { cache: 'no-store' }).catch(() => {})
+    fetch(`${API_URL}/api/photos`)
+      .then((response) => {
+        if (!response.ok) throw new Error('The celebration photos could not be loaded.')
+        return response.json()
+      })
+      .then(setPhotos)
+      .catch((loadError) => setError(loadError.message))
+      .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    document.body.style.overflow = selectedPhoto ? 'hidden' : ''
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setSelectedPhoto(null)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [selectedPhoto])
+
+  const photoUrl = (photo) => `${API_URL}/api/photos/${photo.id}/content`
+
+  return <main className="celebration-page">
+    <section className="celebration-hero">
+      <div className="celebration-sparkles" aria-hidden="true">✦　·　✧</div>
+      <div className="celebration-copy">
+        <p className="eyebrow">A day full of happy memories</p>
+        <p className="celebration-date">July 26, 2026 · Dublin, Ohio</p>
+        <h1>{party.childName}’s<br /><em>birthday celebration</em></h1>
+        <p>Thank you for filling Janvika’s special day with laughter, love, and beautiful memories. We’re so happy to share a few moments from the celebration with you.</p>
+        <a className="primary-link" href="#photos">See the celebration <span>↓</span></a>
+      </div>
+      <div className={`celebration-feature ${photos.length ? '' : 'empty'}`}>
+        {photos.length > 0
+          ? <button type="button" onClick={() => setSelectedPhoto(photos[0])} aria-label="Open featured celebration photo">
+              <img src={photoUrl(photos[0])} alt="Janvika’s birthday celebration" />
+              <span>Our favorite moments</span>
+            </button>
+          : <div><span aria-hidden="true">♡</span><p>Beautiful memories<br />live here</p></div>}
+      </div>
+    </section>
+
+    <section className="celebration-message">
+      <p className="script">Five and flourishing</p>
+      <h2>One joyful day,<br />so many lovely memories.</h2>
+      <p>Janvika celebrated her fifth birthday surrounded by family and friends. Every smile, hug, and birthday wish made the day unforgettable.</p>
+      <div className="memory-details" aria-label="Celebration details">
+        <span><small>CELEBRATED</small><strong>July 26, 2026</strong></span>
+        <span><small>WITH LOVE FROM</small><strong>{party.hostNames.replace('With love, ', '')}</strong></span>
+      </div>
+    </section>
+
+    <section className="public-gallery" id="photos">
+      <header>
+        <div><p className="eyebrow">Birthday album</p><h2>Moments we’ll treasure</h2></div>
+        {photos.length > 0 && <p>{photos.length} {photos.length === 1 ? 'memory' : 'memories'} shared</p>}
+      </header>
+      {loading && <div className="gallery-state"><span className="gallery-loader" /><p>Gathering the happy moments…</p></div>}
+      {error && <div className="gallery-state error" role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></div>}
+      {!loading && !error && photos.length === 0 && <div className="gallery-state gallery-empty"><span aria-hidden="true">♡</span><h3>Photos are coming soon</h3><p>We’re collecting our favorite moments from Janvika’s celebration. Please visit again soon.</p></div>}
+      {!loading && !error && photos.length > 0 && <div className="public-photo-grid">
+        {photos.map((photo, index) => <button type="button" className={index === 0 ? 'featured-photo' : ''} key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`}>
+          <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading={index < 3 ? 'eager' : 'lazy'} />
+          <span>View photo <b>↗</b></span>
+        </button>)}
+      </div>}
+    </section>
+
+    <section className="celebration-thanks">
+      <span aria-hidden="true">✦</span>
+      <p className="script">From our hearts to yours</p>
+      <h2>Thank you for celebrating with us.</h2>
+      <p>Your love made Janvika’s birthday even more magical.</p>
+    </section>
+
+    <footer><span>✦</span><p>{party.hostNames}</p><small>Made especially for {party.childName}</small></footer>
+
+    {selectedPhoto && <div className="photo-lightbox" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) setSelectedPhoto(null)
+    }}>
+      <div role="dialog" aria-modal="true" aria-label="Celebration photo">
+        <button className="lightbox-close" type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close photo">×</button>
+        <img src={photoUrl(selectedPhoto)} alt="Janvika’s birthday celebration" />
+      </div>
+    </div>}
+  </main>
+}
+
+export default function App() {
   return window.location.pathname.replace(/\/$/, '') === '/naveen'
     ? <RsvpDetails />
-    : <InvitationApp />
+    : <CelebrationGallery />
 }
