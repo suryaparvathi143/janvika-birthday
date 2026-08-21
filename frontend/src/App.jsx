@@ -20,6 +20,30 @@ function matchingGuestNames(submittedName, existingNames) {
   })
 }
 
+function guestNameFromFileName(fileName) {
+  const withoutExtension = fileName.replace(/\.[^.]+$/, '')
+  const withoutSequence = withoutExtension.replace(/[\s_-]*\d+$/, '')
+  const words = withoutSequence.replace(/[_-]+/g, ' ').trim()
+  return words.replace(/\b\w/g, (letter) => letter.toUpperCase()) || 'Celebration'
+}
+
+async function preparePhotoForUpload(file) {
+  if (file.size <= 1.2 * 1024 * 1024) return { blob: file, fileName: file.name }
+  const image = await createImageBitmap(file)
+  const scale = Math.min(1, 1800 / Math.max(image.width, image.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(image.width * scale)
+  canvas.height = Math.round(image.height * scale)
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  image.close()
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(
+    (result) => result ? resolve(result) : reject(new Error('This photo could not be prepared.')),
+    'image/jpeg',
+    0.82,
+  ))
+  return { blob, fileName: file.name.replace(/\.[^.]+$/, '') + '.jpg' }
+}
+
 function ConfirmPopup({ title, message, confirmLabel, tone, onConfirm, onCancel }) {
   useEffect(() => {
     const closeOnEscape = (event) => {
@@ -81,6 +105,7 @@ function RsvpDetails() {
   const [photoStatus, setPhotoStatus] = useState('')
   const [photoError, setPhotoError] = useState('')
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [photoGuestName, setPhotoGuestName] = useState('')
   const { requestConfirmation, confirmationPopup } = useConfirmPopup()
 
   useEffect(() => {
@@ -192,11 +217,17 @@ function RsvpDetails() {
     try {
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index]
-        setPhotoStatus(`Uploading ${index + 1} of ${files.length}: ${file.name}`)
+        const guestName = photoGuestName.trim() || guestNameFromFileName(file.name)
+        setPhotoStatus(`Preparing ${index + 1} of ${files.length}: ${file.name} for ${guestName}`)
+        const prepared = await preparePhotoForUpload(file)
         const response = await fetch(`${API_URL}/api/photos`, {
           method: 'POST',
-          headers: { 'Content-Type': file.type, 'X-File-Name': encodeURIComponent(file.name) },
-          body: file,
+          headers: {
+            'Content-Type': prepared.blob.type,
+            'X-File-Name': encodeURIComponent(prepared.fileName),
+            'X-Guest-Name': encodeURIComponent(guestName),
+          },
+          body: prepared.blob,
         })
         if (!response.ok) {
           throw new Error(`${file.name} could not be uploaded.`)
@@ -266,10 +297,12 @@ function RsvpDetails() {
         <div className="photo-manager-heading">
           <div><p className="eyebrow">Birthday gallery</p><h2>Celebration photos</h2></div>
           <form className="photo-upload" onSubmit={uploadPhoto}>
+            <label>Guest name <span className="optional">optional</span><input value={photoGuestName} onChange={(event) => setPhotoGuestName(event.target.value)} placeholder="Blank = use each filename" /></label>
             <label>Choose photos<input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple required /></label>
             <button type="submit" disabled={uploadingPhotos}>{uploadingPhotos ? 'Uploading…' : 'Upload photos to database'}</button>
           </form>
         </div>
+        <p className="photo-upload-help">Tip: leave guest name blank to group files automatically—naveen1.jpg and naveen2.jpg become “Naveen.” Enter a name when every selected photo belongs to the same guest.</p>
         {photoStatus && <p className="invitation-state">{photoStatus}</p>}
         {photoError && <p className="error" role="alert">{photoError}</p>}
         <div className="photo-grid">
@@ -497,6 +530,7 @@ function CelebrationGallery() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedPhoto, setSelectedPhoto] = useState(null)
+  const [selectedGuest, setSelectedGuest] = useState('all')
 
   useEffect(() => {
     fetch(`${API_URL}/api/photos`)
@@ -522,6 +556,10 @@ function CelebrationGallery() {
   }, [selectedPhoto])
 
   const photoUrl = (photo) => `${API_URL}/api/photos/${photo.id}/content`
+  const guestNames = [...new Set(photos.map((photo) => photo.guestName).filter(Boolean))].sort((a, b) => a.localeCompare(b))
+  const filteredPhotos = selectedGuest === 'all'
+    ? photos
+    : photos.filter((photo) => photo.guestName === selectedGuest)
 
   return <main className="celebration-page">
     <section className="celebration-hero">
@@ -556,15 +594,22 @@ function CelebrationGallery() {
     <section className="public-gallery" id="photos">
       <header>
         <div><p className="eyebrow">Birthday album</p><h2>Moments we’ll treasure</h2></div>
-        {photos.length > 0 && <p>{photos.length} {photos.length === 1 ? 'memory' : 'memories'} shared</p>}
+        {photos.length > 0 && <div className="gallery-filter">
+          <label htmlFor="guest-filter">Find photos by guest</label>
+          <select id="guest-filter" value={selectedGuest} onChange={(event) => setSelectedGuest(event.target.value)}>
+            <option value="all">Everyone ({photos.length})</option>
+            {guestNames.map((name) => <option value={name} key={name}>{name} ({photos.filter((photo) => photo.guestName === name).length})</option>)}
+          </select>
+        </div>}
       </header>
       {loading && <div className="gallery-state"><span className="gallery-loader" /><p>Gathering the happy moments…</p></div>}
       {error && <div className="gallery-state error" role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></div>}
       {!loading && !error && photos.length === 0 && <div className="gallery-state gallery-empty"><span aria-hidden="true">♡</span><h3>Photos are coming soon</h3><p>We’re collecting our favorite moments from Janvika’s celebration. Please visit again soon.</p></div>}
-      {!loading && !error && photos.length > 0 && <div className="public-photo-grid">
-        {photos.map((photo, index) => <button type="button" className={index === 0 ? 'featured-photo' : ''} key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`}>
+      {!loading && !error && photos.length > 0 && filteredPhotos.length === 0 && <div className="gallery-state gallery-empty"><h3>No photos found</h3><p>Choose another guest to see their celebration photos.</p></div>}
+      {!loading && !error && filteredPhotos.length > 0 && <div className="public-photo-grid">
+        {filteredPhotos.map((photo, index) => <button type="button" className={index === 0 ? 'featured-photo' : ''} key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`}>
           <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading={index < 3 ? 'eager' : 'lazy'} />
-          <span>View photo <b>↗</b></span>
+          <span>{photo.guestName || 'Celebration'} <b>View ↗</b></span>
         </button>)}
       </div>}
     </section>

@@ -78,6 +78,10 @@ function photoBytes(value) {
   return Buffer.from(value || '')
 }
 
+function cleanGuestName(value = '') {
+  return String(value).trim().replace(/\s+/g, ' ').slice(0, 100)
+}
+
 async function sendWhatsApp(phoneNumber, guestName) {
   if (process.env.WHATSAPP_ENABLED !== 'true' || !process.env.WHATSAPP_ACCESS_TOKEN || !process.env.WHATSAPP_PHONE_NUMBER_ID) {
     throw new Error('WhatsApp invitations are not configured yet')
@@ -137,11 +141,27 @@ export default async function handler(request, response) {
       return rows.length ? response.status(204).end() : reply(response, 404, { message: 'RSVP not found' })
     }
 
+    if (path === '/photos/guests' && request.method === 'GET') {
+      const rows = await sql`SELECT pg.id, pg.guest_name, COUNT(gp.id)::int AS photo_count
+        FROM photo_guests pg
+        LEFT JOIN gallery_photos gp ON gp.guest_id = pg.id
+        GROUP BY pg.id, pg.guest_name
+        HAVING COUNT(gp.id) > 0
+        ORDER BY pg.guest_name`
+      return reply(response, 200, rows.map((row) => ({
+        id: Number(row.id), guestName: row.guest_name, photoCount: Number(row.photo_count),
+      })))
+    }
     if (path === '/photos' && request.method === 'GET') {
-      const rows = await sql`SELECT id, file_name, content_type, file_size, created_at FROM gallery_photos ORDER BY created_at DESC`
+      const rows = await sql`SELECT gp.id, gp.file_name, gp.content_type, gp.file_size, gp.created_at,
+          pg.id AS guest_id, pg.guest_name
+        FROM gallery_photos gp
+        LEFT JOIN photo_guests pg ON pg.id = gp.guest_id
+        ORDER BY gp.created_at DESC`
       return reply(response, 200, rows.map((row) => ({
         id: Number(row.id), fileName: row.file_name, contentType: row.content_type,
         fileSize: Number(row.file_size), createdAt: row.created_at,
+        guestId: row.guest_id ? Number(row.guest_id) : null, guestName: row.guest_name || '',
       })))
     }
     if (path === '/photos' && request.method === 'POST') {
@@ -150,9 +170,23 @@ export default async function handler(request, response) {
       const data = await readBody(request)
       if (!data.length || data.length > 4 * 1024 * 1024) return reply(response, 400, { message: 'Photo must be no larger than 4 MB' })
       const fileName = decodeURIComponent(String(request.headers['x-file-name'] || 'photo')).replace(/[\r\n"/\\]/g, '_')
-      const rows = await sql`INSERT INTO gallery_photos (file_name, content_type, file_size, photo_data, created_at)
-        VALUES (${fileName}, ${contentType}, ${data.length}, decode(${data.toString('hex')}, 'hex'), NOW()) RETURNING id, created_at`
-      return reply(response, 201, { id: Number(rows[0].id), fileName, contentType, fileSize: data.length, createdAt: rows[0].created_at })
+      const guestName = cleanGuestName(decodeURIComponent(String(request.headers['x-guest-name'] || '')))
+      let guestId = null
+      let savedGuestName = ''
+      if (guestName) {
+        const guests = await sql`INSERT INTO photo_guests (guest_name)
+          VALUES (${guestName})
+          ON CONFLICT (LOWER(guest_name)) DO UPDATE SET guest_name = EXCLUDED.guest_name
+          RETURNING id, guest_name`
+        guestId = Number(guests[0].id)
+        savedGuestName = guests[0].guest_name
+      }
+      const rows = await sql`INSERT INTO gallery_photos (file_name, content_type, file_size, photo_data, guest_id, created_at)
+        VALUES (${fileName}, ${contentType}, ${data.length}, decode(${data.toString('hex')}, 'hex'), ${guestId}, NOW()) RETURNING id, created_at`
+      return reply(response, 201, {
+        id: Number(rows[0].id), fileName, contentType, fileSize: data.length,
+        guestId, guestName: savedGuestName, createdAt: rows[0].created_at,
+      })
     }
     const photoContent = path.match(/^\/photos\/(\d+)\/content$/)
     if (photoContent && request.method === 'GET') {
