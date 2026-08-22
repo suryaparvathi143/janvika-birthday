@@ -12,14 +12,6 @@ function Detail({ icon, label, children }) {
   return <div className="detail"><span className="detail-icon" aria-hidden="true">{icon}</span><div><small>{label}</small><strong>{children}</strong></div></div>
 }
 
-function matchingGuestNames(submittedName, existingNames) {
-  const submittedWords = new Set(submittedName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((word) => word.length >= 2))
-  return existingNames.filter((existingName) => {
-    const existingWords = existingName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((word) => word.length >= 2)
-    return existingWords.some((word) => submittedWords.has(word))
-  })
-}
-
 function guestNameFromFileName(fileName) {
   const withoutExtension = fileName.replace(/\.[^.]+$/, '')
   const withoutSequence = withoutExtension.replace(/[\s_-]*\d+$/, '')
@@ -91,11 +83,7 @@ function useConfirmPopup() {
   return { requestConfirmation, confirmationPopup }
 }
 
-function RsvpDetails() {
-  const [responses, setResponses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState('')
-  const [deletingId, setDeletingId] = useState(null)
+function AdminDashboard() {
   const [adminToken, setAdminToken] = useState('')
   const [invitationGuests, setInvitationGuests] = useState([])
   const [invitationForm, setInvitationForm] = useState({ guestName: '', phoneNumber: '' })
@@ -110,15 +98,6 @@ function RsvpDetails() {
   const { requestConfirmation, confirmationPopup } = useConfirmPopup()
 
   useEffect(() => {
-    fetch(`${API_URL}/api/rsvps`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Could not load responses')
-        return response.json()
-      })
-      .then(setResponses)
-      .catch((error) => setLoadError(error.message))
-      .finally(() => setLoading(false))
-
     fetch(`${API_URL}/api/photos`)
       .then((response) => {
         if (!response.ok) throw new Error('Could not load photos')
@@ -127,28 +106,6 @@ function RsvpDetails() {
       .then(setPhotos)
       .catch((error) => setPhotoError(error.message))
   }, [])
-
-  const deleteResponse = async (response) => {
-    const confirmed = await requestConfirmation({
-      title: 'Delete this reply?',
-      message: `${response.guestName}'s RSVP will be permanently removed.`,
-      confirmLabel: 'Delete reply',
-      tone: 'danger',
-    })
-    if (!confirmed) return
-
-    setDeletingId(response.id)
-    setLoadError('')
-    try {
-      const result = await fetch(`${API_URL}/api/rsvps/${response.id}`, { method: 'DELETE' })
-      if (!result.ok) throw new Error('Could not delete this response')
-      setResponses((current) => current.filter((item) => item.id !== response.id))
-    } catch (error) {
-      setLoadError(error.message)
-    } finally {
-      setDeletingId(null)
-    }
-  }
 
   const invitationHeaders = { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken }
 
@@ -282,32 +239,13 @@ function RsvpDetails() {
     }
   }
 
-  const attending = responses.filter((response) => response.attending)
-  const declined = responses.filter((response) => !response.attending)
-  const totalGuests = attending.reduce((total, response) => total + response.partySize, 0)
-  const adults = attending.reduce((total, response) => total + response.adults, 0)
-  const toddlers = attending.reduce((total, response) => total + response.toddlers, 0)
-  const vegetarianGuests = attending.reduce((total, response) => total + response.vegetarianCount, 0)
-  const nonVegetarianGuests = attending.reduce((total, response) => total + response.nonVegetarianCount, 0)
-
   return <main className="details-page">
     {confirmationPopup}
     <header className="details-header">
       <p className="eyebrow">Janvika’s celebration</p>
-      <h1>Guest responses</h1>
-      <p>A private overview of everyone who has replied.</p>
+      <h1>Gallery administration</h1>
+      <p>Manage celebration photos and sharing.</p>
     </header>
-    {loading && <p className="details-state">Loading responses…</p>}
-    {loadError && <p className="details-state error" role="alert">{loadError}</p>}
-    {!loading && !loadError && <>
-      <section className="summary-grid" aria-label="RSVP summary">
-        <div><small>RESPONSES</small><strong>{responses.length}</strong></div>
-        <div><small>COMING</small><strong>{attending.length}</strong></div>
-        <div><small>TOTAL GUESTS</small><strong>{totalGuests}</strong></div>
-        <div><small>ADULTS / TODDLERS</small><strong>{adults} / {toddlers}</strong></div>
-        <div><small>TOTAL VEG</small><strong>{vegetarianGuests}</strong></div>
-        <div><small>TOTAL NON-VEG</small><strong>{nonVegetarianGuests}</strong></div>
-      </section>
       <section className="invitation-manager">
         <div><p className="eyebrow">WhatsApp invitations</p><h2>Send your guest list</h2><p>Guests are sent only after you press send. “Accepted” means WhatsApp accepted the request, not that the guest has read it.</p></div>
         <div className="invitation-panel">
@@ -355,145 +293,19 @@ function RsvpDetails() {
           </figure>)}
         </div>
       </section>
-      <section className="response-section">
-        <div className="response-title"><h2>Joyfully attending</h2><span>{attending.length}</span></div>
-        <div className="response-list">
-          {attending.length === 0 && <p className="empty-response">No accepting responses yet.</p>}
-          {attending.map((response) => <article className="response-card" key={response.id}>
-            <div className="response-top"><h3>{response.guestName}</h3><div className="response-actions"><time>{new Date(response.createdAt).toLocaleDateString()}</time><button className="delete-response" type="button" onClick={() => deleteResponse(response)} disabled={deletingId === response.id}>{deletingId === response.id ? 'Deleting…' : 'Delete'}</button></div></div>
-            <p className="headcount"><span>{response.adults} {response.adults === 1 ? 'adult' : 'adults'}</span><span>{response.toddlers} {response.toddlers === 1 ? 'toddler' : 'toddlers'}</span><span>{response.vegetarianCount} veg</span><span>{response.nonVegetarianCount} non-veg</span><strong>{response.partySize} total</strong></p>
-            {response.message && <p className="guest-message">“{response.message}”</p>}
-          </article>)}
-        </div>
-      </section>
-      <section className="response-section declined-section">
-        <div className="response-title"><h2>Sadly declining</h2><span>{declined.length}</span></div>
-        <div className="response-list">
-          {declined.length === 0 && <p className="empty-response">No declined responses.</p>}
-          {declined.map((response) => <article className="response-card" key={response.id}>
-            <div className="response-top"><h3>{response.guestName}</h3><div className="response-actions"><time>{new Date(response.createdAt).toLocaleDateString()}</time><button className="delete-response" type="button" onClick={() => deleteResponse(response)} disabled={deletingId === response.id}>{deletingId === response.id ? 'Deleting…' : 'Delete'}</button></div></div>
-            {response.message && <p className="guest-message">“{response.message}”</p>}
-          </article>)}
-        </div>
-      </section>
-    </>}
   </main>
 }
 
 function InvitationApp() {
   const [showInvitation, setShowInvitation] = useState(true)
-  const [form, setForm] = useState({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' })
-  const [status, setStatus] = useState('idle')
-  const [error, setError] = useState('')
-  const [existingGuestNames, setExistingGuestNames] = useState([])
-  const { requestConfirmation, confirmationPopup } = useConfirmPopup()
-  const whatsappShareText = encodeURIComponent(`You're warmly invited to our little angel ${party.childName}'s birthday celebration on July 26 at 12 PM! Please RSVP here: https://www.januworld.com`)
+  const whatsappShareText = encodeURIComponent(`See photos from our little angel ${party.childName}'s birthday celebration: https://www.januworld.com`)
 
   useEffect(() => {
     document.body.style.overflow = showInvitation ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [showInvitation])
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/rsvps/names`)
-      .then((response) => response.ok ? response.json() : [])
-      .then(setExistingGuestNames)
-      .catch(() => setExistingGuestNames([]))
-  }, [])
-
-  const update = (event) => {
-    const { name, value } = event.target
-    setForm((current) => {
-      if (name === 'vegetarianCount') {
-        const vegetarianCount = Number(value)
-        const total = current.adults + current.toddlers
-        return { ...current, vegetarianCount, nonVegetarianCount: total - vegetarianCount }
-      }
-      if (name === 'nonVegetarianCount') {
-        const nonVegetarianCount = Number(value)
-        const total = current.adults + current.toddlers
-        return { ...current, nonVegetarianCount, vegetarianCount: total - nonVegetarianCount }
-      }
-      if (name === 'adults' || name === 'toddlers') {
-        const next = { ...current, [name]: Number(value) }
-        const total = next.adults + next.toddlers
-        const vegetarianCount = Math.min(next.vegetarianCount, total)
-        return { ...next, vegetarianCount, nonVegetarianCount: total - vegetarianCount }
-      }
-      return { ...current, [name]: value }
-    })
-  }
-
-  const saveReply = async (confirmDuplicate = false) => {
-    const response = await fetch(`${API_URL}/api/rsvps`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          adults: form.attending ? form.adults : 0,
-          toddlers: form.attending ? form.toddlers : 0,
-          vegetarianCount: form.attending ? form.vegetarianCount : 0,
-          nonVegetarianCount: form.attending ? form.nonVegetarianCount : 0,
-          partySize: form.attending ? form.adults + form.toddlers : 0,
-          confirmDuplicate,
-        }),
-      })
-    if (response.status === 409) {
-      const duplicate = await response.json()
-      if (duplicate.code === 'POSSIBLE_DUPLICATE') {
-        const names = duplicate.matches.join(', ')
-        const proceed = await requestConfirmation({
-          title: 'Guest already found',
-          message: `Guest found with the same name: ${names}. Do you want to continue?`,
-          confirmLabel: 'Continue',
-          tone: 'notice',
-        })
-        if (!proceed) return false
-        return saveReply(true)
-      }
-    }
-    if (!response.ok) throw new Error('We could not save your reply.')
-    return true
-  }
-
-  const submit = async (event) => {
-    event.preventDefault()
-    if (form.attending && form.vegetarianCount + form.nonVegetarianCount !== form.adults + form.toddlers) {
-      setError('Meal selections must match the total number of guests.')
-      return
-    }
-    setStatus('sending')
-    setError('')
-    try {
-      const matchingNames = matchingGuestNames(form.guestName, existingGuestNames)
-      let duplicateConfirmed = false
-      if (matchingNames.length > 0) {
-        duplicateConfirmed = await requestConfirmation({
-          title: 'Guest already found',
-          message: `Guest found with the same name: ${matchingNames.join(', ')}. Do you want to continue?`,
-          confirmLabel: 'Continue',
-          tone: 'notice',
-        })
-        if (!duplicateConfirmed) {
-          setStatus('idle')
-          return
-        }
-      }
-      const saved = await saveReply(duplicateConfirmed)
-      if (!saved) {
-        setStatus('idle')
-        return
-      }
-      setExistingGuestNames((current) => [...current, form.guestName.trim()])
-      setStatus('success')
-    } catch (err) {
-      setError(`${err.message} Please try again in a moment.`)
-      setStatus('error')
-    }
-  }
-
   return <main>
-    {confirmationPopup}
     {showInvitation && <div className="invitation-overlay" role="presentation">
       <div className="invitation-modal" role="dialog" aria-modal="true" aria-labelledby="invitation-title">
         <div className="invitation-border" aria-hidden="true" />
@@ -522,7 +334,6 @@ function InvitationApp() {
         <div className="hero-date-pill"><span>July 26</span><i />12:00 PM</div>
         <h1>{party.headline}<br /><span className="child-name">{party.childName}</span><br /><em>is turning {party.age}!</em></h1>
         <p className="intro">{party.parentInvitation} Cake, giggles, wishes—and all the people we love.</p>
-        <a className="primary-link" href="#rsvp">Say you’ll be there <span>↓</span></a>
         <a className="whatsapp-share" href={`https://wa.me/?text=${whatsappShareText}`} target="_blank" rel="noreferrer">Share invitation on WhatsApp <span>↗</span></a>
       </div>
       <div className="cake" aria-label={`A birthday cake with ${party.age} candles`}>
@@ -549,20 +360,6 @@ function InvitationApp() {
         <div><p>{party.about}</p></div>
     </section>
 
-    <section className="rsvp-section" id="rsvp">
-      <div className="rsvp-heading"><p className="eyebrow">Kindly reply</p><h2>Will you celebrate with us?</h2></div>
-      <div className="form-card">
-        {status === 'success' ? <div className="success" role="status"><span>✓</span><h3>{form.attending ? 'We can’t wait to see you!' : 'Thank you for letting us know.'}</h3><p>Your reply has been saved. {form.attending ? `We’ve reserved space for ${form.adults + form.toddlers} (${form.adults} ${form.adults === 1 ? 'adult' : 'adults'} and ${form.toddlers} ${form.toddlers === 1 ? 'toddler' : 'toddlers'}).` : `We’ll miss you and appreciate the birthday wishes.`}</p><button onClick={() => { setStatus('idle'); setForm({ guestName: '', attending: true, adults: 1, toddlers: 0, vegetarianCount: 1, nonVegetarianCount: 0, message: '' }) }}>Send another reply</button></div> :
-        <form onSubmit={submit}>
-          <label>Your name<input required maxLength="100" name="guestName" value={form.guestName} onChange={update} placeholder="Family or guest name" /></label>
-          <fieldset><legend>Can you make it?</legend><div className="choice-row"><label className={form.attending ? 'selected' : ''}><input type="radio" checked={form.attending} onChange={() => setForm({ ...form, attending: true, adults: Math.max(1, form.adults) })} />Joyfully accepting</label><label className={!form.attending ? 'selected' : ''}><input type="radio" checked={!form.attending} onChange={() => setForm({ ...form, attending: false })} />Sadly declining</label></div></fieldset>
-          {form.attending && <><fieldset><legend>Who is coming from your family?</legend><div className="guest-counts"><label>Adults<select name="adults" value={form.adults} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Toddlers<select name="toddlers" value={form.toddlers} onChange={update}>{Array.from({ length: 13 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Total guests: <strong>{form.adults + form.toddlers}</strong></p></fieldset><fieldset><legend>Meal preference</legend><div className="guest-counts"><label>Vegetarian<select name="vegetarianCount" value={form.vegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label><label>Non-vegetarian<select name="nonVegetarianCount" value={form.nonVegetarianCount} onChange={update}>{Array.from({ length: form.adults + form.toddlers + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}</select></label></div><p className="guest-total">Meal count: <strong>{form.vegetarianCount} veg</strong> · <strong>{form.nonVegetarianCount} non-veg</strong></p></fieldset></>}
-          <label>Birthday note <span className="optional">optional</span><textarea maxLength="500" name="message" value={form.message} onChange={update} placeholder="Share a sweet wish or anything we should know…" /></label>
-          {error && <p className="error" role="alert">{error}</p>}
-          <button className="submit" disabled={status === 'sending'}>{status === 'sending' ? 'Sending…' : 'Send my reply'} <span>→</span></button>
-        </form>}
-      </div>
-    </section>
     <footer><span>✦</span><p>{party.hostNames}</p><small>Made especially for {party.childName}</small></footer>
   </main>
 }
@@ -738,6 +535,6 @@ function CelebrationGallery() {
 
 export default function App() {
   return window.location.pathname.replace(/\/$/, '') === '/naveen'
-    ? <RsvpDetails />
+    ? <AdminDashboard />
     : <CelebrationGallery />
 }

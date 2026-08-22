@@ -25,15 +25,6 @@ function requestedPath(request) {
   return `/${value || ''}`.replace(/\/+$/, '') || '/'
 }
 
-function nameWords(value = '') {
-  return new Set(value.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((word) => word.length >= 2))
-}
-
-function matchingName(submittedName, existingName) {
-  const submitted = nameWords(submittedName)
-  return [...nameWords(existingName)].some((word) => submitted.has(word))
-}
-
 function requireAdmin(request, response) {
   const configured = process.env.WHATSAPP_ADMIN_TOKEN || ''
   const supplied = request.headers['x-admin-token'] || ''
@@ -42,21 +33,6 @@ function requireAdmin(request, response) {
     return false
   }
   return true
-}
-
-function mapRsvp(row) {
-  return {
-    id: Number(row.id),
-    guestName: row.guest_name,
-    attending: row.attending,
-    adults: row.adults,
-    toddlers: row.toddlers,
-    partySize: row.party_size,
-    vegetarianCount: row.vegetarian_count,
-    nonVegetarianCount: row.non_vegetarian_count,
-    message: row.message || '',
-    createdAt: row.created_at,
-  }
 }
 
 function mapWhatsAppGuest(row) {
@@ -106,40 +82,6 @@ export default async function handler(request, response) {
   try {
     if (path === '/health' && request.method === 'GET') return reply(response, 200, { status: 'ok' })
     const sql = getDatabase()
-
-    if (path === '/rsvps' && request.method === 'GET') {
-      const rows = await sql`SELECT * FROM rsvps ORDER BY created_at DESC`
-      return reply(response, 200, rows.map(mapRsvp))
-    }
-    if (path === '/rsvps/names' && request.method === 'GET') {
-      const rows = await sql`SELECT DISTINCT guest_name FROM rsvps ORDER BY guest_name`
-      return reply(response, 200, rows.map((row) => row.guest_name))
-    }
-    if (path === '/rsvps' && request.method === 'POST') {
-      const body = await readJson(request)
-      if (!body.guestName?.trim()) return reply(response, 400, { message: 'Guest name is required' })
-      const existing = await sql`SELECT DISTINCT guest_name FROM rsvps`
-      const matches = existing.map((row) => row.guest_name).filter((name) => matchingName(body.guestName, name))
-      if (!body.confirmDuplicate && matches.length) return reply(response, 409, { code: 'POSSIBLE_DUPLICATE', matches })
-      const attending = Boolean(body.attending)
-      const adults = attending ? Number(body.adults || 0) : 0
-      const toddlers = attending ? Number(body.toddlers || 0) : 0
-      const vegetarian = attending ? Number(body.vegetarianCount || 0) : 0
-      const nonVegetarian = attending ? Number(body.nonVegetarianCount || 0) : 0
-      if (adults < 0 || toddlers < 0 || adults + toddlers > 20 || vegetarian + nonVegetarian !== adults + toddlers) {
-        return reply(response, 400, { message: 'Guest or meal counts are invalid' })
-      }
-      const rows = await sql`INSERT INTO rsvps
-        (guest_name, email, attending, party_size, adults, toddlers, vegetarian_count, non_vegetarian_count, message, created_at)
-        VALUES (${body.guestName.trim()}, '', ${attending}, ${adults + toddlers}, ${adults}, ${toddlers}, ${vegetarian}, ${nonVegetarian}, ${(body.message || '').trim()}, NOW())
-        RETURNING id, attending`
-      return reply(response, 201, { id: Number(rows[0].id), attending: rows[0].attending })
-    }
-    const rsvpDelete = path.match(/^\/rsvps\/(\d+)$/)
-    if (rsvpDelete && request.method === 'DELETE') {
-      const rows = await sql`DELETE FROM rsvps WHERE id = ${Number(rsvpDelete[1])} RETURNING id`
-      return rows.length ? response.status(204).end() : reply(response, 404, { message: 'RSVP not found' })
-    }
 
     if (path === '/photos/guests' && request.method === 'GET') {
       const rows = await sql`SELECT pg.id, pg.guest_name, COUNT(gp.id)::int AS photo_count
