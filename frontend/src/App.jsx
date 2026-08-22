@@ -705,7 +705,6 @@ function CelebrationGallery() {
       {!loading && !error && galleryView === 'grid' && filteredPhotos.length > 0 && <div className="public-photo-grid">
         {filteredPhotos.map((photo, index) => <button type="button" key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`}>
           <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading="lazy" />
-          <span>{photo.guestName || 'Celebration'} <b>View ↗</b></span>
         </button>)}
       </div>}
       {!loading && !error && galleryView === 'list' && filteredPhotos.length > 0 && <div className="public-photo-list">
