@@ -236,7 +236,7 @@ footer span { color: #edbd70; font-size: 1.5rem; } footer p { font-family: 'DM S
 .single-public-photo span, .photo-carousel-slide span { position: absolute; left: 22px; right: 22px; bottom: 22px; display: flex; justify-content: space-between; padding: 14px 18px; border: 1px solid #ffffff38; border-radius: 999px; background: #372834b8; backdrop-filter: blur(9px); color: white; font-size: .84rem; font-weight: 600; }
 .photo-carousel { position: relative; padding-bottom: 48px; }
 .photo-carousel-stage { position: relative; height: min(61vw, 680px); perspective: 1400px; }
-.photo-carousel-slide { position: absolute; top: 4%; left: 50%; width: 70%; min-height: 92%; opacity: 0; transform: translateX(-50%) scale(.7); transition: transform .85s cubic-bezier(.2, .72, .24, 1), opacity .55s, filter .55s; pointer-events: none; }
+.photo-carousel-slide { position: absolute; top: 4%; left: 50%; width: 70%; min-height: 92%; opacity: 0; transform: translateX(-50%) scale(.7); transition: transform 1.2s cubic-bezier(.16, .76, .22, 1), opacity .9s ease, filter .9s ease; pointer-events: none; }
 .photo-carousel-slide.current { z-index: 3; opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; }
 .photo-carousel-slide.previous, .photo-carousel-slide.next { z-index: 2; opacity: .64; filter: saturate(.75) brightness(.72); pointer-events: auto; cursor: pointer; }
 .photo-carousel-slide.previous { transform: translateX(-103%) scale(.68) rotateY(8deg); }

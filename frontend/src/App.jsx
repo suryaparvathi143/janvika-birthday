@@ -613,7 +613,7 @@ function CelebrationGallery() {
     if (galleryView !== 'carousel' || filteredPhotos.length <= 1) return undefined
     const timer = window.setInterval(() => {
       setGalleryIndex((current) => (current + 1) % filteredPhotos.length)
-    }, 4200)
+    }, 8000)
     return () => window.clearInterval(timer)
   }, [filteredPhotos.length, selectedGuest, galleryView])
 
