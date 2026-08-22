@@ -106,6 +106,7 @@ function RsvpDetails() {
   const [photoError, setPhotoError] = useState('')
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [photoGuestName, setPhotoGuestName] = useState('')
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState([])
   const { requestConfirmation, confirmationPopup } = useConfirmPopup()
 
   useEffect(() => {
@@ -246,6 +247,41 @@ function RsvpDetails() {
     }
   }
 
+  const togglePhotoSelection = (photoId) => {
+    setSelectedPhotoIds((current) => current.includes(photoId)
+      ? current.filter((id) => id !== photoId)
+      : [...current, photoId])
+  }
+
+  const deleteSelectedPhotos = async () => {
+    if (selectedPhotoIds.length === 0) return
+    const confirmed = await requestConfirmation({
+      title: `Delete ${selectedPhotoIds.length} photo${selectedPhotoIds.length === 1 ? '' : 's'}?`,
+      message: 'The selected photos will be permanently removed from the database and public gallery.',
+      confirmLabel: 'Delete photos',
+      tone: 'danger',
+    })
+    if (!confirmed) return
+    setPhotoError('')
+    setPhotoStatus('Deleting selected photos…')
+    try {
+      const response = await fetch(`${API_URL}/api/photos`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedPhotoIds }),
+      })
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Could not delete the selected photos.')
+      const result = await response.json()
+      const deletedIds = new Set(result.deletedIds)
+      setPhotos((current) => current.filter((photo) => !deletedIds.has(photo.id)))
+      setSelectedPhotoIds([])
+      setPhotoStatus(`${result.deletedCount} photo${result.deletedCount === 1 ? '' : 's'} deleted.`)
+    } catch (deleteError) {
+      setPhotoStatus('')
+      setPhotoError(deleteError.message)
+    }
+  }
+
   const attending = responses.filter((response) => response.attending)
   const declined = responses.filter((response) => !response.attending)
   const totalGuests = attending.reduce((total, response) => total + response.partySize, 0)
@@ -305,11 +341,17 @@ function RsvpDetails() {
         <p className="photo-upload-help">Tip: leave guest name blank to group files automatically—naveen1.jpg and naveen2.jpg become “Naveen.” Enter a name when every selected photo belongs to the same guest.</p>
         {photoStatus && <p className="invitation-state">{photoStatus}</p>}
         {photoError && <p className="error" role="alert">{photoError}</p>}
+        {photos.length > 0 && <div className="photo-bulk-actions">
+          <label><input type="checkbox" checked={selectedPhotoIds.length === photos.length} onChange={(event) => setSelectedPhotoIds(event.target.checked ? photos.map((photo) => photo.id) : [])} />Select all {photos.length} photos</label>
+          <span>{selectedPhotoIds.length} selected</span>
+          <button type="button" disabled={selectedPhotoIds.length === 0} onClick={deleteSelectedPhotos}>Delete selected</button>
+        </div>}
         <div className="photo-grid">
           {photos.length === 0 && !photoError && <p className="empty-response">No photos uploaded yet.</p>}
-          {photos.map((photo) => <figure key={photo.id}>
+          {photos.map((photo) => <figure className={selectedPhotoIds.includes(photo.id) ? 'selected' : ''} key={photo.id}>
+            <label className="photo-select"><input type="checkbox" checked={selectedPhotoIds.includes(photo.id)} onChange={() => togglePhotoSelection(photo.id)} /><span>Select</span></label>
             <img src={`${API_URL}/api/photos/${photo.id}/content`} alt={photo.fileName} loading="lazy" />
-            <figcaption><strong>{photo.fileName}</strong><span>{(photo.fileSize / 1024 / 1024).toFixed(1)} MB</span></figcaption>
+            <figcaption><strong>{photo.guestName || photo.fileName}</strong><span>{(photo.fileSize / 1024 / 1024).toFixed(1)} MB</span></figcaption>
           </figure>)}
         </div>
       </section>
@@ -532,6 +574,7 @@ function CelebrationGallery() {
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedGuest, setSelectedGuest] = useState('all')
   const [galleryIndex, setGalleryIndex] = useState(0)
+  const [galleryView, setGalleryView] = useState('carousel')
 
   useEffect(() => {
     fetch(`${API_URL}/api/photos`)
@@ -567,15 +610,20 @@ function CelebrationGallery() {
   }, [selectedGuest])
 
   useEffect(() => {
-    if (filteredPhotos.length <= 1) return undefined
+    if (galleryView !== 'carousel' || filteredPhotos.length <= 1) return undefined
     const timer = window.setInterval(() => {
       setGalleryIndex((current) => (current + 1) % filteredPhotos.length)
     }, 4200)
     return () => window.clearInterval(timer)
-  }, [filteredPhotos.length, selectedGuest])
+  }, [filteredPhotos.length, selectedGuest, galleryView])
 
   const showPreviousPhoto = () => setGalleryIndex((current) => (current - 1 + filteredPhotos.length) % filteredPhotos.length)
   const showNextPhoto = () => setGalleryIndex((current) => (current + 1) % filteredPhotos.length)
+  const carouselSlides = filteredPhotos.length > 1 ? [
+    { position: 'previous', photo: filteredPhotos[(galleryIndex - 1 + filteredPhotos.length) % filteredPhotos.length] },
+    { position: 'current', photo: filteredPhotos[galleryIndex] },
+    { position: 'next', photo: filteredPhotos[(galleryIndex + 1) % filteredPhotos.length] },
+  ] : []
 
   return <main className="celebration-page">
     <section className="celebration-hero">
@@ -610,38 +658,54 @@ function CelebrationGallery() {
     <section className="public-gallery" id="photos">
       <header>
         <div><p className="eyebrow">Birthday album</p><h2>Moments we’ll treasure</h2></div>
-        {photos.length > 0 && <div className="gallery-filter">
-          <label htmlFor="guest-filter">Find photos by guest</label>
-          <select id="guest-filter" value={selectedGuest} onChange={(event) => setSelectedGuest(event.target.value)}>
-            <option value="all">Everyone ({photos.length})</option>
-            {guestNames.map((name) => <option value={name} key={name}>{name} ({photos.filter((photo) => photo.guestName === name).length})</option>)}
-          </select>
+        {photos.length > 0 && <div className="gallery-toolbar">
+          <div className="gallery-filter">
+            <label htmlFor="guest-filter">Find photos by guest</label>
+            <select id="guest-filter" value={selectedGuest} onChange={(event) => setSelectedGuest(event.target.value)}>
+              <option value="all">Everyone ({photos.length})</option>
+              {guestNames.map((name) => <option value={name} key={name}>{name} ({photos.filter((photo) => photo.guestName === name).length})</option>)}
+            </select>
+          </div>
+          <div className="gallery-view-switch" aria-label="Gallery view">
+            {['carousel', 'grid', 'list'].map((view) => <button type="button" key={view} className={galleryView === view ? 'active' : ''} onClick={() => setGalleryView(view)} aria-pressed={galleryView === view}>{view}</button>)}
+          </div>
         </div>}
       </header>
       {loading && <div className="gallery-state"><span className="gallery-loader" /><p>Gathering the happy moments…</p></div>}
       {error && <div className="gallery-state error" role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Try again</button></div>}
       {!loading && !error && photos.length === 0 && <div className="gallery-state gallery-empty"><span aria-hidden="true">♡</span><h3>Photos are coming soon</h3><p>We’re collecting our favorite moments from Janvika’s celebration. Please visit again soon.</p></div>}
       {!loading && !error && photos.length > 0 && filteredPhotos.length === 0 && <div className="gallery-state gallery-empty"><h3>No photos found</h3><p>Choose another guest to see their celebration photos.</p></div>}
-      {!loading && !error && filteredPhotos.length === 1 && <div className="single-public-photo">
+      {!loading && !error && galleryView === 'carousel' && filteredPhotos.length === 1 && <div className="single-public-photo">
         <button type="button" onClick={() => setSelectedPhoto(filteredPhotos[0])} aria-label="Open celebration photo">
           <img src={photoUrl(filteredPhotos[0])} alt="Janvika’s birthday celebration moment" />
           <span>{filteredPhotos[0].guestName || 'Celebration'} <b>View ↗</b></span>
         </button>
       </div>}
-      {!loading && !error && filteredPhotos.length > 1 && <div className="photo-carousel" aria-roledescription="carousel" aria-label="Celebration photos">
-        <div className="photo-carousel-window">
-          <div className="photo-carousel-track" style={{ transform: `translateX(-${galleryIndex * 100}%)` }}>
-            {filteredPhotos.map((photo, index) => <button type="button" className="photo-carousel-slide" key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`} aria-hidden={index !== galleryIndex} tabIndex={index === galleryIndex ? 0 : -1}>
-              <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading={index < 3 ? 'eager' : 'lazy'} />
-              <span>{photo.guestName || 'Celebration'} <b>View photo ↗</b></span>
-            </button>)}
-          </div>
+      {!loading && !error && galleryView === 'carousel' && filteredPhotos.length > 1 && <div className="photo-carousel" aria-roledescription="carousel" aria-label="Celebration photos">
+        <div className="photo-carousel-stage">
+          {carouselSlides.map(({ position, photo }) => <button type="button" className={`photo-carousel-slide ${position}`} key={`${position}-${photo.id}`} onClick={() => position === 'current' ? setSelectedPhoto(photo) : position === 'previous' ? showPreviousPhoto() : showNextPhoto()} aria-label={position === 'current' ? 'Open current photo' : `Show ${position} photo`}>
+            <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration · ${photo.guestName || 'Celebration'}`} />
+            <span>{photo.guestName || 'Celebration'} {position === 'current' && <b>View photo ↗</b>}</span>
+          </button>)}
         </div>
         <button type="button" className="carousel-arrow carousel-previous" onClick={showPreviousPhoto} aria-label="Previous photo">←</button>
         <button type="button" className="carousel-arrow carousel-next" onClick={showNextPhoto} aria-label="Next photo">→</button>
         <div className="carousel-dots" aria-label="Choose a photo">
           {filteredPhotos.map((photo, index) => <button type="button" key={photo.id} className={index === galleryIndex ? 'active' : ''} onClick={() => setGalleryIndex(index)} aria-label={`Show photo ${index + 1}`} aria-current={index === galleryIndex ? 'true' : undefined} />)}
         </div>
+      </div>}
+      {!loading && !error && galleryView === 'grid' && filteredPhotos.length > 0 && <div className="public-photo-grid">
+        {filteredPhotos.map((photo, index) => <button type="button" key={photo.id} onClick={() => setSelectedPhoto(photo)} aria-label={`Open celebration photo ${index + 1}`}>
+          <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration moment ${index + 1}`} loading="lazy" />
+          <span>{photo.guestName || 'Celebration'} <b>View ↗</b></span>
+        </button>)}
+      </div>}
+      {!loading && !error && galleryView === 'list' && filteredPhotos.length > 0 && <div className="public-photo-list">
+        {filteredPhotos.map((photo, index) => <button type="button" key={photo.id} onClick={() => setSelectedPhoto(photo)}>
+          <img src={photoUrl(photo)} alt="" loading="lazy" />
+          <span><strong>{photo.guestName || 'Celebration photo'}</strong><small>Photo {index + 1} · {(photo.fileSize / 1024 / 1024).toFixed(1)} MB</small></span>
+          <b>View photo ↗</b>
+        </button>)}
       </div>}
     </section>
 

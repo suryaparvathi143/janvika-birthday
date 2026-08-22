@@ -188,6 +188,23 @@ export default async function handler(request, response) {
         guestId, guestName: savedGuestName, createdAt: rows[0].created_at,
       })
     }
+    if (path === '/photos' && request.method === 'DELETE') {
+      const body = await readJson(request)
+      const ids = [...new Set((Array.isArray(body.ids) ? body.ids : [])
+        .map(Number)
+        .filter((id) => Number.isInteger(id) && id > 0))].slice(0, 500)
+      if (!ids.length) return reply(response, 400, { message: 'Select at least one photo to delete' })
+      const deleted = await sql`DELETE FROM gallery_photos WHERE id = ANY(${ids}::bigint[]) RETURNING id`
+      await sql`DELETE FROM photo_guests pg WHERE NOT EXISTS (SELECT 1 FROM gallery_photos gp WHERE gp.guest_id = pg.id)`
+      return reply(response, 200, { deletedIds: deleted.map((row) => Number(row.id)), deletedCount: deleted.length })
+    }
+    const photoDelete = path.match(/^\/photos\/(\d+)$/)
+    if (photoDelete && request.method === 'DELETE') {
+      const deleted = await sql`DELETE FROM gallery_photos WHERE id = ${Number(photoDelete[1])} RETURNING id`
+      if (!deleted.length) return reply(response, 404, { message: 'Photo not found' })
+      await sql`DELETE FROM photo_guests pg WHERE NOT EXISTS (SELECT 1 FROM gallery_photos gp WHERE gp.guest_id = pg.id)`
+      return response.status(204).end()
+    }
     const photoContent = path.match(/^\/photos\/(\d+)\/content$/)
     if (photoContent && request.method === 'GET') {
       const rows = await sql`SELECT file_name, content_type, photo_data FROM gallery_photos WHERE id = ${Number(photoContent[1])}`
