@@ -619,11 +619,15 @@ function CelebrationGallery() {
 
   const showPreviousPhoto = () => setGalleryIndex((current) => (current - 1 + filteredPhotos.length) % filteredPhotos.length)
   const showNextPhoto = () => setGalleryIndex((current) => (current + 1) % filteredPhotos.length)
-  const carouselSlides = filteredPhotos.length > 1 ? [
-    { position: 'previous', photo: filteredPhotos[(galleryIndex - 1 + filteredPhotos.length) % filteredPhotos.length] },
-    { position: 'current', photo: filteredPhotos[galleryIndex] },
-    { position: 'next', photo: filteredPhotos[(galleryIndex + 1) % filteredPhotos.length] },
-  ] : []
+  const carouselPosition = (index) => {
+    const distance = (index - galleryIndex + filteredPhotos.length) % filteredPhotos.length
+    if (distance === 0) return 'current'
+    if (distance === 1) return 'next'
+    if (distance === filteredPhotos.length - 1) return 'previous'
+    if (distance === 2) return 'far-next'
+    if (distance === filteredPhotos.length - 2) return 'far-previous'
+    return 'hidden'
+  }
 
   return <main className="celebration-page">
     <section className="celebration-hero">
@@ -683,10 +687,14 @@ function CelebrationGallery() {
       </div>}
       {!loading && !error && galleryView === 'carousel' && filteredPhotos.length > 1 && <div className="photo-carousel" aria-roledescription="carousel" aria-label="Celebration photos">
         <div className="photo-carousel-stage">
-          {carouselSlides.map(({ position, photo }) => <button type="button" className={`photo-carousel-slide ${position}`} key={`${position}-${photo.id}`} onClick={() => position === 'current' ? setSelectedPhoto(photo) : position === 'previous' ? showPreviousPhoto() : showNextPhoto()} aria-label={position === 'current' ? 'Open current photo' : `Show ${position} photo`}>
+          <span className="carousel-paper carousel-paper-one" aria-hidden="true" />
+          <span className="carousel-paper carousel-paper-two" aria-hidden="true" />
+          {filteredPhotos.map((photo, index) => {
+            const position = carouselPosition(index)
+            return <button type="button" className={`photo-carousel-slide ${position}`} key={photo.id} onClick={() => position === 'current' ? setSelectedPhoto(photo) : position.includes('previous') ? showPreviousPhoto() : showNextPhoto()} aria-label={position === 'current' ? 'Open current photo' : `Show ${position.replace('-', ' ')} photo`} tabIndex={['current', 'previous', 'next'].includes(position) ? 0 : -1}>
             <img src={photoUrl(photo)} alt={`Janvika’s birthday celebration · ${photo.guestName || 'Celebration'}`} />
             <span>{photo.guestName || 'Celebration'} {position === 'current' && <b>View photo ↗</b>}</span>
-          </button>)}
+          </button>})}
         </div>
         <button type="button" className="carousel-arrow carousel-previous" onClick={showPreviousPhoto} aria-label="Previous photo">←</button>
         <button type="button" className="carousel-arrow carousel-next" onClick={showNextPhoto} aria-label="Next photo">→</button>
