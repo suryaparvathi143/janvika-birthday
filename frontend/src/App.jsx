@@ -396,6 +396,20 @@ function CelebrationGallery() {
     }
   }, [selectedPhoto])
 
+  useEffect(() => {
+    const elements = document.querySelectorAll('[data-reveal]')
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.14 })
+    elements.forEach((element) => observer.observe(element))
+    return () => observer.disconnect()
+  }, [])
+
   const photoUrl = (photo) => `${API_URL}/api/photos/${photo.id}/content`
   const guestNames = [...new Set(photos.map((photo) => photo.guestName).filter(Boolean))].sort((a, b) => a.localeCompare(b))
   const filteredPhotos = selectedGuest === 'all'
@@ -426,17 +440,29 @@ function CelebrationGallery() {
     return 'hidden'
   }
 
-  return <main className="celebration-page">
+  return <main className="celebration-page modern-celebration">
+    <nav className="celebration-nav" aria-label="Celebration navigation">
+      <a className="celebration-brand" href="#top" aria-label="Januworld home"><span>J</span><strong>januworld</strong></a>
+      <div><a href="#story">Our story</a><a href="#photos">Photos</a></div>
+      <a className="nav-memory-link" href="#photos">Enter the album <span>↗</span></a>
+    </nav>
     <section className="celebration-hero">
+      <div id="top" className="page-anchor" />
+      <span className="motion-orb orb-one" aria-hidden="true" />
+      <span className="motion-orb orb-two" aria-hidden="true" />
+      <span className="motion-orb orb-three" aria-hidden="true" />
+      <div className="hero-grid-lines" aria-hidden="true" />
       <div className="celebration-sparkles" aria-hidden="true">✦　·　✧</div>
       <div className="celebration-copy">
-        <p className="eyebrow">A day full of happy memories</p>
+        <p className="eyebrow hero-eyebrow"><span /> A day full of happy memories</p>
         <p className="celebration-date">July 26, 2026 · Dublin, Ohio</p>
-        <h1>{party.childName}’s<br /><em>birthday celebration</em></h1>
+        <h1><span className="title-line">{party.childName}’s</span><br /><em className="title-line title-delay">birthday celebration</em></h1>
         <p>Thank you for filling Janvika’s special day with laughter, love, and beautiful memories. We’re so happy to share a few moments from the celebration with you.</p>
         <a className="primary-link" href="#photos">See the celebration <span>↓</span></a>
       </div>
       <div className={`celebration-feature ${photos.length ? '' : 'empty'}`}>
+        <span className="feature-ring" aria-hidden="true" />
+        <span className="feature-sticker" aria-hidden="true">five<br />&amp;<br />fabulous</span>
         {photos.length > 0
           ? <button type="button" onClick={() => setSelectedPhoto(photos[0])} aria-label="Open featured celebration photo">
               <img src={photoUrl(photos[0])} alt="Janvika’s birthday celebration" />
@@ -444,9 +470,13 @@ function CelebrationGallery() {
             </button>
           : <div><span aria-hidden="true">♡</span><p>Beautiful memories<br />live here</p></div>}
       </div>
+      <div className="scroll-cue" aria-hidden="true"><span>Scroll to explore</span><i /></div>
     </section>
 
-    <section className="celebration-message">
+    <div className="memory-marquee" aria-hidden="true"><div><span>little moments</span><b>✦</b><span>big memories</span><b>✦</b><span>forever five</span><b>✦</b><span>little moments</span><b>✦</b><span>big memories</span><b>✦</b><span>forever five</span><b>✦</b></div></div>
+
+    <section className="celebration-message" id="story" data-reveal>
+      <span className="section-number" aria-hidden="true">01 / STORY</span>
       <p className="script">Five and flourishing</p>
       <h2>One joyful day,<br />so many lovely memories.</h2>
       <p>Janvika celebrated her fifth birthday surrounded by family and friends. Every smile, hug, and birthday wish made the day unforgettable.</p>
@@ -456,9 +486,11 @@ function CelebrationGallery() {
       </div>
     </section>
 
-    <section className="public-gallery" id="photos">
+    <section className="public-gallery" id="photos" data-reveal>
+      <span className="gallery-glow gallery-glow-one" aria-hidden="true" />
+      <span className="gallery-glow gallery-glow-two" aria-hidden="true" />
       <header>
-        <div><p className="eyebrow">Birthday album</p><h2>Moments we’ll treasure</h2></div>
+        <div><span className="section-number light" aria-hidden="true">02 / ALBUM</span><p className="eyebrow">Birthday album</p><h2>Moments we’ll treasure</h2></div>
         {photos.length > 0 && <div className="gallery-toolbar">
           <div className="gallery-filter">
             <label htmlFor="guest-filter">Find photos by guest</label>
@@ -513,7 +545,8 @@ function CelebrationGallery() {
       </div>}
     </section>
 
-    <section className="celebration-thanks">
+    <section className="celebration-thanks" data-reveal>
+      <span className="thanks-orbit" aria-hidden="true"><i>✦</i></span>
       <span aria-hidden="true">✦</span>
       <p className="script">From our hearts to yours</p>
       <h2>Thank you for celebrating with us.</h2>
