@@ -359,6 +359,28 @@ footer span { color: #edbd70; font-size: 1.5rem; } footer p { font-family: 'DM S
 .thanks-orbit i { position: absolute; top: 11%; left: 8%; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #ef819d; color: white; font-style: normal; box-shadow: 0 10px 25px #be577342; }
 .modern-celebration .celebration-thanks > *:not(.thanks-orbit) { position: relative; z-index: 1; }
 .modern-celebration footer { position: relative; background: #241925; }
+.page-progress { position: fixed; z-index: 2000; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; background: #ffffff20; }
+.page-progress span { display: block; width: var(--scroll-progress, 0%); height: 100%; border-radius: 0 99px 99px 0; background: linear-gradient(90deg, #ff8bab, #ffc66c, #ad7eea); box-shadow: 0 0 16px #ff8bab; transition: width .12s linear; }
+.pointer-aura { position: fixed; z-index: 100; top: 0; left: 0; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, #ffb3ce1d, transparent 68%); transform: translate(calc(var(--pointer-x, 50vw) - 50%), calc(var(--pointer-y, 50vh) - 50%)); pointer-events: none; mix-blend-mode: screen; transition: transform .16s ease-out; }
+.magic-dust { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.magic-dust i { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #ed7696; box-shadow: 0 0 12px #ed7696; animation: dust-drift 7s ease-in-out infinite; }
+.magic-dust i:after { content: ''; position: absolute; inset: -4px 2px; border-left: 1px solid #ed769680; transform: rotate(45deg); }
+.magic-dust i:nth-child(1) { left: 8%; top: 26%; animation-delay: -1s; } .magic-dust i:nth-child(2) { left: 18%; top: 72%; animation-delay: -4s; } .magic-dust i:nth-child(3) { left: 33%; top: 13%; animation-delay: -2s; } .magic-dust i:nth-child(4) { left: 46%; top: 83%; animation-delay: -5s; } .magic-dust i:nth-child(5) { left: 58%; top: 21%; animation-delay: -3s; } .magic-dust i:nth-child(6) { left: 69%; top: 68%; animation-delay: -.5s; } .magic-dust i:nth-child(7) { left: 82%; top: 12%; animation-delay: -6s; } .magic-dust i:nth-child(8) { left: 92%; top: 58%; animation-delay: -2.5s; } .magic-dust i:nth-child(9) { left: 13%; top: 46%; animation-delay: -5.5s; } .magic-dust i:nth-child(10) { left: 41%; top: 35%; animation-delay: -1.5s; } .magic-dust i:nth-child(11) { left: 76%; top: 39%; animation-delay: -4.5s; } .magic-dust i:nth-child(12) { left: 55%; top: 92%; animation-delay: -3.5s; }
+.feature-caption { position: absolute; z-index: 5; color: #70475f; font-family: 'Caveat', cursive; font-size: 1.35rem; pointer-events: none; }
+.modern-celebration .celebration-feature.empty .feature-sticker { font-size: 1.15rem; }
+.modern-celebration .celebration-feature.empty .feature-caption { font-size: 1.35rem; }
+.feature-caption:after { content: ''; display: block; width: 28px; height: 1px; margin-top: 2px; background: currentColor; opacity: .5; }
+.feature-caption-one { left: -34px; top: 24%; transform: rotate(-12deg); animation: caption-float 5s ease-in-out infinite; }
+.feature-caption-two { right: -22px; bottom: 16%; transform: rotate(9deg); animation: caption-float 5s -2.5s ease-in-out infinite reverse; }
+.story-notes { grid-column: 2; display: flex; flex-wrap: wrap; gap: 9px; margin-top: 28px; }
+.story-notes span { padding: 8px 14px; border: 1px solid #8c617730; border-radius: 999px; color: #7b5068; font-family: 'Caveat', cursive; font-size: 1.08rem; background: #fffaf590; transition: transform .3s ease, color .3s ease, background .3s ease; }
+.story-notes span:nth-child(2) { transform: rotate(3deg); }
+.story-notes span:nth-child(3) { transform: rotate(-2deg); }
+.story-notes span:hover { color: white; background: #6f405d; transform: translateY(-4px) rotate(0); }
+.back-to-top { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 18px; width: fit-content; margin: 35px auto 0; padding: 10px 10px 10px 22px; border: 1px solid #58384f2b; border-radius: 999px; background: #ffffff9e; color: #4b3047; font-size: .76rem; font-weight: 800; text-decoration: none; box-shadow: 0 13px 35px #6a3d5418; transition: transform .3s ease, box-shadow .3s ease; }
+.back-to-top span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #332136; color: white; transition: transform .35s ease; }
+.back-to-top:hover { transform: translateY(-5px); box-shadow: 0 20px 45px #6a3d5428; }
+.back-to-top:hover span { transform: rotate(45deg); }
 
 @keyframes nav-arrive { from { opacity: 0; transform: translateY(-16px); } }
 @keyframes title-rise { from { opacity: 0; transform: translateY(70px) rotate(2deg); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
@@ -376,6 +398,8 @@ footer span { color: #edbd70; font-size: 1.5rem; } footer p { font-family: 'DM S
 @keyframes scroll-line { 0%,100% { transform: scaleY(.25); opacity: .35; } 50% { transform: scaleY(1); opacity: 1; } }
 @keyframes marquee-move { to { transform: translateX(-50%); } }
 @keyframes gallery-drift { to { transform: translate(90px, 55px) scale(1.15); } }
+@keyframes dust-drift { 0%,100% { opacity: .15; transform: translateY(12px) scale(.65) rotate(0); } 50% { opacity: .9; transform: translateY(-22px) scale(1.2) rotate(90deg); } }
+@keyframes caption-float { 0%,100% { translate: 0 0; } 50% { translate: 0 -10px; } }
 
 @media (max-width: 800px) {
   .celebration-nav { grid-template-columns: 1fr auto; padding: 18px 20px; }
@@ -383,9 +407,11 @@ footer span { color: #edbd70; font-size: 1.5rem; } footer p { font-family: 'DM S
   .nav-memory-link { font-size: 0; padding: 7px; border: 0; background: transparent; }
   .nav-memory-link span { font-size: .75rem; }
   .modern-celebration .celebration-hero { padding-top: 115px; }
-  .feature-sticker { right: -10px; width: 76px; height: 76px; font-size: 1rem; }
+  .modern-celebration .celebration-feature.empty .feature-sticker { right: -10px; width: 76px; height: 76px; font-size: .92rem; }
   .scroll-cue { display: none; }
   .section-number { margin-bottom: 32px; }
+  .pointer-aura { display: none; }
+  .story-notes { grid-column: 1; }
 }
 
 @media (max-width: 480px) {
@@ -396,4 +422,5 @@ footer span { color: #edbd70; font-size: 1.5rem; } footer p { font-family: 'DM S
   .modern-celebration .celebration-message { min-height: auto; }
   .modern-celebration .public-photo-grid button:nth-child(3n+2) { transform: none; }
   .modern-celebration .public-photo-grid button:hover, .modern-celebration .public-photo-grid button:nth-child(3n+2):hover { transform: scale(1.02); }
+  .feature-caption { display: none; }
 }

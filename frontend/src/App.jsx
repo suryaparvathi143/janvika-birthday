@@ -410,6 +410,18 @@ function CelebrationGallery() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    const page = document.querySelector('.modern-celebration')
+    const updateProgress = () => {
+      const available = document.documentElement.scrollHeight - window.innerHeight
+      const progress = available > 0 ? Math.min(1, window.scrollY / available) : 0
+      page?.style.setProperty('--scroll-progress', `${progress * 100}%`)
+    }
+    updateProgress()
+    window.addEventListener('scroll', updateProgress, { passive: true })
+    return () => window.removeEventListener('scroll', updateProgress)
+  }, [])
+
   const photoUrl = (photo) => `${API_URL}/api/photos/${photo.id}/content`
   const guestNames = [...new Set(photos.map((photo) => photo.guestName).filter(Boolean))].sort((a, b) => a.localeCompare(b))
   const filteredPhotos = selectedGuest === 'all'
@@ -440,7 +452,13 @@ function CelebrationGallery() {
     return 'hidden'
   }
 
-  return <main className="celebration-page modern-celebration">
+  return <main className="celebration-page modern-celebration" onPointerMove={(event) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    event.currentTarget.style.setProperty('--pointer-x', `${event.clientX - bounds.left}px`)
+    event.currentTarget.style.setProperty('--pointer-y', `${event.clientY}px`)
+  }}>
+    <div className="page-progress" aria-hidden="true"><span /></div>
+    <div className="pointer-aura" aria-hidden="true" />
     <nav className="celebration-nav" aria-label="Celebration navigation">
       <a className="celebration-brand" href="#top" aria-label="Januworld home"><span>J</span><strong>januworld</strong></a>
       <div><a href="#story">Our story</a><a href="#photos">Photos</a></div>
@@ -452,6 +470,7 @@ function CelebrationGallery() {
       <span className="motion-orb orb-two" aria-hidden="true" />
       <span className="motion-orb orb-three" aria-hidden="true" />
       <div className="hero-grid-lines" aria-hidden="true" />
+      <div className="magic-dust" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} />)}</div>
       <div className="celebration-sparkles" aria-hidden="true">✦　·　✧</div>
       <div className="celebration-copy">
         <p className="eyebrow hero-eyebrow"><span /> A day full of happy memories</p>
@@ -463,6 +482,8 @@ function CelebrationGallery() {
       <div className={`celebration-feature ${photos.length ? '' : 'empty'}`}>
         <span className="feature-ring" aria-hidden="true" />
         <span className="feature-sticker" aria-hidden="true">five<br />&amp;<br />fabulous</span>
+        <span className="feature-caption feature-caption-one" aria-hidden="true">love</span>
+        <span className="feature-caption feature-caption-two" aria-hidden="true">joy</span>
         {photos.length > 0
           ? <button type="button" onClick={() => setSelectedPhoto(photos[0])} aria-label="Open featured celebration photo">
               <img src={photoUrl(photos[0])} alt="Janvika’s birthday celebration" />
@@ -480,6 +501,7 @@ function CelebrationGallery() {
       <p className="script">Five and flourishing</p>
       <h2>One joyful day,<br />so many lovely memories.</h2>
       <p>Janvika celebrated her fifth birthday surrounded by family and friends. Every smile, hug, and birthday wish made the day unforgettable.</p>
+      <div className="story-notes" aria-label="The day in three words"><span>giggles</span><span>wishes</span><span>magic</span></div>
       <div className="memory-details" aria-label="Celebration details">
         <span><small>CELEBRATED</small><strong>July 26, 2026</strong></span>
         <span><small>WITH LOVE FROM</small><strong>{party.hostNames.replace('With love, ', '')}</strong></span>
@@ -551,6 +573,7 @@ function CelebrationGallery() {
       <p className="script">From our hearts to yours</p>
       <h2>Thank you for celebrating with us.</h2>
       <p>Your love made Janvika’s birthday even more magical.</p>
+      <a className="back-to-top" href="#top">Relive the magic <span>↑</span></a>
     </section>
 
     <footer><span>✦</span><p>{party.hostNames}</p><small>Made especially for {party.childName}</small></footer>
